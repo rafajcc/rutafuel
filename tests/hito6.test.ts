@@ -195,5 +195,31 @@ describe('HITO 6: automatización, rendimiento y despliegue', () => {
     assert.ok(htaccess.includes('max-age=31536000, immutable'));
     assert.ok(htaccess.includes('max-age=0, must-revalidate'));
     assert.ok(htaccess.includes('nosniff'));
+    assert.ok(htaccess.includes('<Files "_headers">'));
+    assert.ok(htaccess.includes('Require all denied'));
+  });
+
+  it('prepara Cloudflare Pages con el mismo dist y caché sin directivas duplicadas', async () => {
+    const headers = await readFile(path.resolve('public/_headers'), 'utf8');
+    for (const token of [
+      '/*',
+      '/data/*',
+      '/_astro/*',
+      '! Cache-Control',
+      'max-age=31536000, immutable',
+      'max-age=3600',
+      'max-age=0, must-revalidate',
+      'X-Content-Type-Options: nosniff',
+      'Referrer-Policy: strict-origin-when-cross-origin',
+      'X-Frame-Options: SAMEORIGIN',
+      'X-Robots-Tag: noindex',
+      'pages.dev',
+    ]) {
+      assert.ok(headers.includes(token), `falta en _headers: ${token}`);
+    }
+    // La regla general debe ir antes de las específicas para que "!" pueda detachar.
+    assert.ok(headers.indexOf('/*') < headers.indexOf('/data/*'));
+    assert.ok(headers.indexOf('/*') < headers.indexOf('/_astro/*'));
+    assert.ok((headers.match(/!\s+Cache-Control/g) ?? []).length >= 2);
   });
 });

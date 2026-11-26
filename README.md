@@ -198,11 +198,12 @@ src/data/
   y la escritura atómica siguen siendo la puerta de salida.
 - `OCM_API_KEY` se configure como secreto de GitHub Actions (nunca en el repositorio). `SITE_URL`
   controla canonical, sitemap y robots.
-- `public/.htaccess` viaja en `dist/` y aporta compresión, caché por tipo de archivo, cabeceras de
-  seguridad y prevención de listados. El procedimiento completo está en
-  [`docs/despliegue.md`](docs/despliegue.md).
+- El mismo `dist/` sirve para **Apache/Plesk** y **Cloudflare Pages**: incluye `public/.htaccess`
+  (compresión, caché por tipo, seguridad y sin listados) y `public/_headers` (caché inmutable para
+  assets con hash, caché corta para JSON, `noindex` en previews). Cada servidor usa el suyo.
+  El procedimiento completo está en [`docs/despliegue.md`](docs/despliegue.md).
 - `npm run verify:dist` comprueba el resultado: SEO, presupuesto de JS/CSS, ausencia de `raw` en los
-  JSON públicos, rejilla de rutas y configuración de Apache.
+  JSON públicos, rejilla de rutas y las configuraciones de Apache y Cloudflare Pages.
 
 ## Arquitectura
 
@@ -224,9 +225,9 @@ La información detallada de decisiones, modelos y umbrales de validación está
 - [x] HITO 5 — Planificador de rutas: geocodificación local/Nominatim, OSRM inyectable, rejilla
       espacial y estaciones ordenadas sobre la geometría real. 78 pruebas, `check` y `build` correctos
       (2.052 rutas).
-- [x] HITO 6 — Refresco parcial, GitHub Actions con validación y commit automático, `.htaccess` para
-      Apache/Plesk y `verify:dist`. 84 pruebas, `check`, `build` (2.052 rutas) y verificación final
-      (25/25 comprobaciones) correctos.
+- [x] HITO 6 — Refresco parcial, GitHub Actions con validación y commit automático, despliegue dual
+      Apache/Plesk + Cloudflare Pages y `verify:dist`. 85 pruebas, `check`, `build` (2.052 rutas) y
+      verificación final (30/30 comprobaciones) correctos.
 
 Pendiente para producción: verificación de Open Charge Map con una `OCM_API_KEY` real (sin clave la
 fuente queda registrada como `skipped`), prueba de los proveedores externos con endpoints propios y

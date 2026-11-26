@@ -7,7 +7,7 @@ ingesta se ejecuta en Node.js y produce JSON versionado que se publica junto al 
 la interfaz de carburantes, el HITO 4 la de recarga y el HITO 5 el planificador de rutas: portada con
 ambos buscadores, páginas SEO, comparadores en cliente, mapa Leaflet bajo demanda y `/ruta/` con
 geocodificación, enrutado y estaciones sobre la geometría real. El HITO 6 añade refresco parcial,
-GitHub Actions, verificación del build y configuración para Apache/Plesk.
+GitHub Actions, verificación del build y configuración para Apache/Plesk y Cloudflare Pages.
 
 ## Stack y versiones
 
@@ -258,14 +258,18 @@ centroide es aritmético sobre las estaciones reales, no una ubicación oficial.
   El resultado se resume en `$GITHUB_STEP_SUMMARY`.
 - **SEO y rendimiento medibles**: `BaseLayout.astro` añade `rel="sitemap"`, `og:locale` y
   `meta robots`, además de canonical, Open Graph, JSON-LD y breadcrumbs ya existentes.
-  `scripts/verify-dist.ts` (`npm run verify:dist`) comprueba 25 condiciones: ficheros publicados,
+  `scripts/verify-dist.ts` (`npm run verify:dist`) comprueba 30 condiciones: ficheros publicados,
   sitemap y robots, HTML de `/ruta/`, presupuesto de JS inicial (≤ 48 KiB) y CSS (≤ 24 KiB), ausencia
   de Leaflet en el HTML inicial, altura reservada para anuncios, 5.490 JSON sin `raw`, rejilla de
-  rutas y cabeceras de Apache.
-- **Plesk**: `public/.htaccess` se copia a `dist/` y configura compresión, caché inmutable para
-  assets con hash, caché corta para JSON, revalidación de HTML, cabeceras de seguridad y ausencia de
-  listados. `docs/despliegue.md` detalla document root, `AllowOverride`, HTTPS, comprobaciones con
-  `curl`, secretos y recuperación por `git revert`. No se requiere Node.js ni PHP en producción.
+  rutas, cabeceras de Apache y cabeceras de Cloudflare Pages.
+- **Despliegue dual**: un único `dist/` sirve para **Apache/Plesk** y **Cloudflare Pages**.
+  `public/.htaccess` aporta compresión, caché por tipo, seguridad y ausencia de listados; Apache
+  bloquea `_headers`. `public/_headers` hace lo equivalente en Pages: revalidación para HTML, caché
+  inmutable para assets con hash, caché de 1 h para JSON, `noindex` en `*.pages.dev` y `detach` de
+  `Cache-Control` para no unir directivas conflictivas. Cloudflare ignora `.htaccess`. No se añade
+  ningún paso de deploy al workflow: Pages reacciona al push y Plesk recibe el mismo `dist/` por SFTP.
+  `docs/despliegue.md` detalla ambos procedimientos, `AllowOverride`, HTTPS, `curl`, secretos y
+  recuperación por `git revert`. No se requiere Node.js ni PHP en producción.
 
 ## Validación y escritura atómica
 
@@ -307,10 +311,10 @@ parciales en `src/data`.
 
 ## Estado actual y límites
 
-- `npm test`: 84 pruebas (22 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
+- `npm test`: 85 pruebas (22 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
   `npm run build`: 2.052 rutas (portada, `/ruta/`, 52 provincias y 1.080 municipios de carburantes,
-  51 provincias y 867 municipios de recarga, sitemap y robots). `npm run verify:dist`: 25/25
-  comprobaciones correctas sobre `dist/` (SEO, presupuesto de assets, datos y Apache).
+  51 provincias y 867 municipios de recarga, sitemap y robots). `npm run verify:dist`: 30/30
+  comprobaciones correctas sobre `dist/` (SEO, presupuesto de assets, datos, Apache y Cloudflare Pages).
 - Ingesta real de referencia (26/11/2026): 11.546 gasolineras, 52 provincias, 3.262 municipios,
   12.150 estaciones de recarga y 36.052 puntos; 4 descartes, 0 duplicados y 0 filas RIPREE
   malformadas. La rejilla de rutas contiene 927 celdas (~5 MB) con las tres comprobaciones `rutas-*`
@@ -327,7 +331,8 @@ parciales en `src/data`.
 ## Despliegue
 
 El resultado de `npm run build` es un directorio `dist/` puramente estático, compatible con
-Apache/Nginx gestionados mediante Plesk. No se requiere Node.js en el servidor de producción.
-`OCM_API_KEY` se usa solo durante la ingesta (GitHub Actions o entorno local), nunca se escribe en el
-repositorio ni en JSON públicos. `public/.htaccess` se copia a `dist/` con compresión, caché y
-cabeceras, y el procedimiento paso a paso está en [`despliegue.md`](despliegue.md).
+Apache/Nginx gestionados mediante Plesk **y con Cloudflare Pages**. No se requiere Node.js en el
+servidor de producción. `OCM_API_KEY` se usa solo durante la ingesta (GitHub Actions o entorno local),
+nunca se escribe en el repositorio ni en JSON públicos. `public/.htaccess` y `public/_headers` se
+copian a `dist/`; cada plataforma usa el suyo. El procedimiento paso a paso está en
+[`despliegue.md`](despliegue.md).

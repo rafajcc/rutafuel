@@ -69,6 +69,7 @@ async function main(): Promise<void> {
     'robots.txt',
     'sitemap.xml',
     '.htaccess',
+    '_headers',
     'data/rutas/estaciones.json',
   ]) {
     check(`fichero ${file}`, await exists(file));
@@ -130,6 +131,30 @@ async function main(): Promise<void> {
 
   const htaccess = await text('.htaccess');
   check('caché y compresión en Apache', /Cache-Control/.test(htaccess) && /DEFLATE/.test(htaccess));
+  check(
+    'Apache no expone _headers',
+    /<Files "_headers">/.test(htaccess) && /Require all denied/.test(htaccess),
+  );
+
+  const headers = await text('_headers');
+  check(
+    'cabeceras de Cloudflare Pages',
+    headers.includes('X-Content-Type-Options') &&
+      headers.includes('Referrer-Policy') &&
+      headers.includes('X-Frame-Options'),
+  );
+  check(
+    'caché diferenciada en Cloudflare Pages',
+    headers.includes('/data/*') &&
+      headers.includes('/_astro/*') &&
+      (headers.match(/!\s+Cache-Control/g) ?? []).length >= 2 &&
+      headers.includes('max-age=31536000, immutable') &&
+      headers.includes('max-age=3600'),
+  );
+  check(
+    'noindex en despliegues de preview',
+    headers.includes('pages.dev') && headers.includes('X-Robots-Tag: noindex'),
+  );
 
   for (const name of passed) console.log(`  OK  ${name}`);
   for (const name of failed) console.error(`  FAIL  ${name}`);

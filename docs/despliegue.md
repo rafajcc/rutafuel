@@ -1,7 +1,8 @@
 # Despliegue y automatización
 
 RutaFuel es un sitio estático: **no se ejecuta Node.js en el servidor de producción**. El contenido
-de `dist/` se publica tal cual en Apache/Nginx gestionado por Plesk.
+de `dist/` se publica tal cual en Apache/Nginx gestionado por Plesk **o en Cloudflare Pages**.
+Ambos destinos usan exactamente el mismo build: no hace falta generar dos artefactos distintos.
 
 ## 1. Generación del sitio
 
@@ -17,9 +18,10 @@ npm run verify:dist
   `robots.txt` y `sitemap.xml`. Si no se define, se usa `https://rutafuel.es` como valor de ejemplo.
 - `OCM_API_KEY` solo se necesita durante la ingesta; nunca se copia a `dist/`.
 - `npm run verify:dist` falla si faltan páginas o cabeceras, si el JS/CSS inicial supera el
-  presupuesto, si los JSON públicos incluyen `raw` o si no se ha copiado `.htaccess`.
+  presupuesto, si los JSON públicos incluyen `raw` o si no se han copiado `.htaccess` y `_headers`.
 
-El resultado es `dist/index.html`, las páginas estáticas, `dist/data/` y `dist/.htaccess`.
+El resultado es `dist/index.html`, las páginas estáticas, `dist/data/`, `dist/.htaccess` (Apache) y
+`dist/_headers` (Cloudflare Pages). Cada servidor usa el suyo y ignora el otro.
 
 ## 2. Plesk (Apache)
 
@@ -53,7 +55,51 @@ El resultado es `dist/index.html`, las páginas estáticas, `dist/data/` y `dist
 Si se usa Nginx en lugar de Apache, trasladar estas reglas al bloque `server`: `try_files` para las
 rutas con barra final, `gzip on`, `expires` por tipo y `add_header` equivalentes.
 
-## 3. Actualización automática de datos
+## 3. Cloudflare Pages
+
+El mismo `dist/` se publica sin recompilar: Cloudflare lee `_headers` e ignora `.htaccess`.
+Apache hace exactamente lo contrario: usa `.htaccess` y `_headers` queda bloqueado.
+
+1. En Cloudflare Dashboard → *Workers & Pages* → *Create* → *Pages* → conectar el repositorio de
+   GitHub.
+2. Configuración del proyecto:
+
+   | Opción | Valor |
+   | --- | --- |
+   | Framework preset | **Astro** (o *None* si no aparece) |
+   | Build command | `npm run build` |
+   | Build output directory | `dist` |
+   | Root directory | `/` |
+   | Variable de entorno | `SITE_URL=https://tu-dominio.es` |
+   | Node | versión de `.nvmrc` (22.23.4), vía Pages o `NODE_VERSION` |
+
+   `OCM_API_KEY` **no se configura en Pages**: solo se usa durante la ingesta en GitHub Actions.
+3. En *Settings → Domains* añadir el dominio definitivo. El hostname `*.pages.dev` se mantiene para
+   previews; `_headers` le añade `X-Robots-Tag: noindex` para no duplicar contenido indexable.
+4. Cada push a `main` —incluidos los commits del bot de Actions— dispara el build y el despliegue.
+   No hace falta añadir un paso de deploy al workflow.
+5. Verificación rápida:
+
+   ```bash
+   curl -I https://tu-proyecto.pages.dev/
+   curl -I https://tu-proyecto.pages.dev/_astro/<hash>.js   # max-age=31536000, immutable
+   curl -I https://tu-proyecto.pages.dev/data/buscador/municipios.json # max-age=3600
+   curl -fsS https://tu-proyecto.pages.dev/sitemap.xml | head
+   ```
+
+Si quieres mantener también Plesk, sube por SFTP **el mismo `dist/`**: no necesitas otro build ni
+otras variables.
+
+### Qué hace `_headers`
+
+- `/*`: revalidación para HTML y cabeceras de seguridad para todo.
+- `/data/*`: caché de 1 h para los JSON regenerados por la ingesta.
+- `/_astro/*`: caché inmutable para assets con hash.
+- `! Cache-Control` antes de cada regla específica: Cloudflare une valores repetidos, y sin el
+  `detach` las directivas `max-age` entrarían en conflicto.
+- `*.pages.dev`: `X-Robots-Tag: noindex` en previews.
+
+## 4. Actualización automática de datos
 
 `.github/workflows/update-data.yml`:
 
@@ -89,7 +135,7 @@ En *Settings → Secrets and variables → Actions → New repository secret*:
 `SITE_URL` no es un secreto: se define como variable de entorno en el build o se deja el valor por
 defecto del repositorio. Ninguna credencial se escribe en `src/data` ni en `public/data`.
 
-## 4. Reutilización y recuperación
+## 5. Reutilización y recuperación
 
 Las opciones `--skip-minetur`, `--skip-ripree` y `--skip-ocm` reutilizan los maestros y la procedencia
 del dataset anterior. Requieren un `metadata.json` válido; si falta, la ingesta falla con un mensaje
@@ -99,7 +145,7 @@ Para revertir una actualización, basta con hacer `git revert` del commit `datos
 programada (...)` y reconstruir. La escritura atómica (`staging → backup → swap`) garantiza que una
 ejecución local interrumpida no haya dejado datos parciales en `src/data`.
 
-## 5. Límites antes de abrir al público
+## 6. Límites antes de abrir al público
 
 - El servidor público de OSRM es una demo y Nominatim tiene políticas de uso estricto: configurar
   proveedores propios (o cachear agresivamente) antes de un uso comercial de `/ruta/`.

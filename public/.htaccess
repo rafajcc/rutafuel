@@ -3,6 +3,13 @@
 
 DirectoryIndex index.html
 
+# Cloudflare Pages usa _headers; Apache no debe servirlo.
+<IfModule mod_authz_core.c>
+  <Files "_headers">
+    Require all denied
+  </Files>
+</IfModule>
+
 <IfModule mod_autoindex.c>
   IndexIgnore *
 </IfModule>
