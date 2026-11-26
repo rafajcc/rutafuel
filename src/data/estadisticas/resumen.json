@@ -1,7 +1,7 @@
 {
   "dataVersion": 2,
-  "generatedAt": "2026-11-26T15:13:28.494Z",
-  "sourceUpdatedAt": "2026-11-26T16:13:28",
+  "generatedAt": "2026-11-26T16:15:35.881Z",
+  "sourceUpdatedAt": "2026-11-26T17:15:36",
   "totals": {
     "stations": 11546,
     "provinces": 52,
@@ -34,7 +34,7 @@
       "avg": 1.741
     },
     "gop": {
-      "count": 5917,
+      "count": 5916,
       "min": 1.329,
       "max": 2.179,
       "avg": 1.837

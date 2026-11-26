@@ -24416,11 +24416,12 @@
     "provinceId": "36",
     "provinceName": "Pontevedra",
     "provinceSlug": "pontevedra-36",
-    "stationCount": 2,
-    "lat": 42.547612,
-    "lon": -8.705166,
+    "stationCount": 3,
+    "lat": 42.531269,
+    "lon": -8.718861,
     "postalCodes": [
-      "36616"
+      "36616",
+      "36637"
     ]
   },
   {
@@ -37851,11 +37852,10 @@
     "provinceId": "36",
     "provinceName": "Pontevedra",
     "provinceSlug": "pontevedra-36",
-    "stationCount": 8,
-    "lat": 42.431934,
-    "lon": -8.807038,
+    "stationCount": 7,
+    "lat": 42.422421,
+    "lon": -8.815905,
     "postalCodes": [
-      "36637",
       "36960",
       "36966",
       "36969",
