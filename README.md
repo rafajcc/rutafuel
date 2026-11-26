@@ -6,6 +6,8 @@ carburantes), el HITO 2 (ingesta de recarga), el HITO 3 (comparador de carburant
 (comparador eléctrico), el HITO 5 (planificador de rutas) y el HITO 6 (optimización, automatización
 y preparación de despliegue)**.
 
+Sitio publicado: **https://rutafuel-6pz.pages.dev/** (Cloudflare Pages, sin dominio propio).
+
 ## Requisitos
 
 - Node.js >= 22.23.4 (ver `.nvmrc`). El repositorio incluye `node` como dependencia de desarrollo
@@ -57,12 +59,13 @@ fuente de verdad para el build.
 Copia las variables que necesites a `.env`:
 
 ```bash
-SITE_URL=https://rutafuel.es
+SITE_URL=https://rutafuel-6pz.pages.dev
 OCM_API_KEY=          # opcional
 ```
 
-- `SITE_URL` se usa para canonical URLs, `sitemap.xml` y `robots.txt`. Sustituye el dominio de
-  ejemplo por el dominio real antes de publicar.
+- `SITE_URL` se usa para canonical, `og:url`, JSON-LD, `sitemap.xml` y `robots.txt`. El valor actual
+  es el del sitio publicado; sustitúyelo solo si despliegas en otro hostname (por ejemplo, un dominio
+  propio en Plesk). No se usa `CF_PAGES_URL`: es la URL efímera del deployment y cambia en cada build.
 - `OCM_API_KEY` se usa **solo en la ingesta** y se envía como cabecera `X-API-Key` a Open Charge Map.
   Nunca se escribe en el repositorio, en la URL ni en los JSON públicos. Sin clave, la fuente se omite
   de forma segura y `metadata.json` lo indica con `status: "skipped"`. Con clave configurada, un fallo
@@ -196,8 +199,9 @@ src/data/
   las 03:30 UTC, admite ejecución manual (`fuel`, `charging`, `all`) y solo crea commit cuando
   `src/data` cambia. Las fuentes omitidas se reutilizan del dataset anterior; la validación crítica
   y la escritura atómica siguen siendo la puerta de salida.
-- `OCM_API_KEY` se configure como secreto de GitHub Actions (nunca en el repositorio). `SITE_URL`
-  controla canonical, sitemap y robots.
+- `OCM_API_KEY` se configura como secreto de GitHub Actions (nunca en el repositorio). `SITE_URL`
+  controla canonical, `og:url`, JSON-LD, sitemap y robots; en Cloudflare se define en Production y
+  Preview con `https://rutafuel-6pz.pages.dev`.
 - El mismo `dist/` sirve para **Apache/Plesk** y **Cloudflare Pages**: incluye `public/.htaccess`
   (compresión, caché por tipo, seguridad y sin listados) y `public/_headers` (caché inmutable para
   assets con hash, caché corta para JSON, `noindex` en previews). Cada servidor usa el suyo.

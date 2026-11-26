@@ -268,8 +268,9 @@ centroide es aritmético sobre las estaciones reales, no una ubicación oficial.
 - **Despliegue dual**: un único `dist/` sirve para **Apache/Plesk** y **Cloudflare Pages**.
   `public/.htaccess` aporta compresión, caché por tipo, seguridad y ausencia de listados; Apache
   bloquea `_headers`. `public/_headers` hace lo equivalente en Pages: revalidación para HTML, caché
-  inmutable para assets con hash, caché de 1 h para JSON, `noindex` en `*.pages.dev` y `detach` de
-  `Cache-Control` para no unir directivas conflictivas. Cloudflare ignora `.htaccess`. No se añade
+  inmutable para assets con hash, caché de 1 h para JSON, `noindex` solo en previews
+  (`<hash>.<proyecto>.pages.dev`) y `detach` de `Cache-Control` para no unir directivas conflictivas.
+  El hostname de producción queda indexable. Cloudflare ignora `.htaccess`. No se añade
   ningún paso de deploy al workflow: Pages reacciona al push y Plesk recibe el mismo `dist/` por SFTP.
   `docs/despliegue.md` detalla ambos procedimientos, `AllowOverride`, HTTPS, `curl`, secretos y
   recuperación por `git revert`. No se requiere Node.js ni PHP en producción.
@@ -309,8 +310,10 @@ parciales en `src/data`.
 - El texto de cada página se calcula desde `estadisticas/`: mínimo y media de G95, media de gasóleo
   A, diferencia con la media nacional/provincial y recuento de estaciones. No se publican páginas de
   municipios sin datos suficientes.
-- La URL pública se configura con `SITE_URL` (valor por defecto de ejemplo en `astro.config.mjs`).
-  Antes de producción debe establecerse el dominio real para canonical y sitemap.
+- La URL pública se configura con `SITE_URL`: `https://rutafuel-6pz.pages.dev` en el despliegue
+  actual, tanto en Production como en Preview de Cloudflare. Se usa en canonical, `og:url`, JSON-LD,
+  `sitemap.xml` y `robots.txt`. El valor por defecto de `astro.config.mjs` (`https://rutafuel.es`) es
+  solo un ejemplo. No se usa `CF_PAGES_URL`, que apunta al deployment efímero del build.
 
 ## Estado actual y límites
 
@@ -340,3 +343,8 @@ servidor de producción. `OCM_API_KEY` se usa solo durante la ingesta (GitHub Ac
 nunca se escribe en el repositorio ni en JSON públicos. `public/.htaccess` y `public/_headers` se
 copian a `dist/`; cada plataforma usa el suyo. El procedimiento paso a paso está en
 [`despliegue.md`](despliegue.md).
+
+El despliegue activo usa la **Pages Git integration** de Cloudflare sobre la rama `main`:
+`npm run build`, salida `dist/` y ningún *Deploy command*. No hacen falta `CLOUDFLARE_API_TOKEN` ni
+`CLOUDFLARE_ACCOUNT_ID`; el sitio se sirve en `https://rutafuel-6pz.pages.dev/` y los previews
+`<hash>.rutafuel-6pz.pages.dev` llevan `X-Robots-Tag: noindex`.
