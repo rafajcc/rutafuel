@@ -1,6 +1,22 @@
 import { MAX_PRICE, MIN_PRICE, isValidCoordinate } from './gasolineras.js';
 import { FUEL_KEYS } from './types.js';
-import type { DatasetMetadata, FuelStation, NormalizeResult, ValidationResult } from './types.js';
+import type {
+  ChargerIndex,
+  ChargerSummaryStats,
+  ChargingStation,
+  DatasetMetadata,
+  FuelStation,
+  NormalizeResult,
+  ValidationResult,
+} from './types.js';
+
+export interface ChargerValidationInput {
+  stations: ChargingStation[];
+  index: ChargerIndex;
+  stats: ChargerSummaryStats;
+  malformedRipreeRows: number;
+  duplicatesRemoved: number;
+}
 
 export interface DatasetValidationInput {
   stations: FuelStation[];
@@ -9,6 +25,7 @@ export interface DatasetValidationInput {
   previous?: DatasetMetadata;
   generatedAt: string;
   dataVersion: number;
+  chargers?: ChargerValidationInput;
 }
 
 type Check = ValidationResult['checks'][number];
@@ -123,6 +140,103 @@ export function validateDataset(input: DatasetValidationInput): ValidationResult
     ([, value]) => typeof value === 'string' && value.trim().length === 0,
   );
   add('ficheros-no-vacíos', emptyFiles.length === 0, `${emptyFiles.length} ficheros vacíos`);
+
+  if (input.chargers) {
+    const chargers = input.chargers;
+    add(
+      'cargadores-registros-mínimos',
+      chargers.stations.length >= 1000,
+      `${chargers.stations.length} estaciones de recarga válidas`,
+    );
+
+    const chargerIds = new Set(chargers.stations.map((station) => station.id));
+    add(
+      'cargadores-ids-únicos',
+      chargerIds.size === chargers.stations.length,
+      `${chargerIds.size} IDs únicos para ${chargers.stations.length} estaciones`,
+    );
+
+    const badChargerCoordinates = chargers.stations.filter(
+      (station) => !isValidCoordinate(station.lat, station.lon),
+    );
+    add(
+      'cargadores-coordenadas-válidas',
+      badChargerCoordinates.length === 0,
+      `${badChargerCoordinates.length} coordenadas inválidas`,
+    );
+
+    const withoutProvenance = chargers.stations.filter(
+      (station) => !station.officialId || station.sources.length === 0,
+    );
+    add(
+      'cargadores-procedencia',
+      withoutProvenance.length === 0,
+      `${withoutProvenance.length} estaciones sin ID oficial o procedencia`,
+    );
+
+    const badConnectors = chargers.stations.flatMap((station) =>
+      station.connectors.filter(
+        (connector) =>
+          !connector.type || !connector.rawType || (connector.powerKw !== null &&
+            (!Number.isFinite(connector.powerKw) || connector.powerKw < 0 || connector.powerKw > 1000)),
+      ),
+    );
+    add(
+      'cargadores-conectores-válidos',
+      badConnectors.length === 0,
+      `${badConnectors.length} conectores con tipo o potencia inválidos`,
+    );
+
+    const master = input.files['cargadores/estaciones.json'];
+    add(
+      'cargadores-fichero-maestro',
+      Array.isArray(master) && master.length === chargers.stations.length,
+      `cargadores/estaciones.json con ${Array.isArray(master) ? master.length : 0} registros`,
+    );
+
+    const indexedChargers = chargers.index.provinces.reduce(
+      (total, province) => total + province.stationCount,
+      0,
+    );
+    add(
+      'cargadores-índice-coherente',
+      indexedChargers === chargers.stations.length,
+      `${indexedChargers} estaciones indexadas por provincia`,
+    );
+    add(
+      'cargadores-estadísticas-coherentes',
+      chargers.stats.totals.stations === chargers.stations.length,
+      `${chargers.stats.totals.stations} estaciones en estadísticas`,
+    );
+    add(
+      'cargadores-filas-malformadas',
+      chargers.malformedRipreeRows <= chargers.stations.length * 0.1,
+      `${chargers.malformedRipreeRows} filas malformadas descartadas de RIPREE`,
+      chargers.malformedRipreeRows > 0 ? 'warning' : 'error',
+    );
+
+    const metadataSources = (input.files['metadata.json'] as { sources?: Array<{ url?: string; note?: string }> })
+      ?.sources ?? [];
+    const leakedSecrets = metadataSources.filter((source) =>
+      /[?&](key|apikey)=/i.test(source.url ?? '') || /x-api-key/i.test(source.url ?? ''),
+    );
+    add(
+      'secretos-no-expuestos',
+      leakedSecrets.length === 0,
+      `${leakedSecrets.length} URLs con credenciales`,
+    );
+
+    if (input.previous?.totals.chargingStations) {
+      const previous = input.previous.totals.chargingStations;
+      const change = Math.abs(chargers.stations.length - previous) / previous;
+      add(
+        'cargadores-variación-vs-anterior',
+        change <= 0.3,
+        `${(change * 100).toFixed(2)}% de variación respecto a ${previous} estaciones de recarga`,
+        change > 0.1 && change <= 0.3 ? 'warning' : 'error',
+      );
+    }
+  }
 
   const ok = checks.every((check) => check.ok || check.severity === 'warning');
   return { ok, checkedAt: input.generatedAt, checks };

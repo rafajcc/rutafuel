@@ -1,34 +1,60 @@
 {
-  "dataVersion": 1,
-  "generatedAt": "2026-11-26T13:32:50.987Z",
+  "dataVersion": 2,
+  "generatedAt": "2026-11-26T14:09:41.747Z",
   "sources": [
     {
       "id": "MINETUR",
       "url": "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/",
-      "fetchedAt": "2026-11-26T13:32:55.990Z",
-      "sourceUpdatedAtRaw": "26/11/2026 14:32:51",
-      "sourceUpdatedAt": "2026-11-26T14:32:51",
-      "recordsReceived": 11553,
-      "recordsProcessed": 11549,
+      "fetchedAt": "2026-11-26T14:09:48.079Z",
+      "status": "active",
+      "sourceUpdatedAt": "2026-11-26T15:09:41",
+      "sourceUpdatedAtRaw": "26/11/2026 15:09:41",
+      "recordsReceived": 11552,
+      "recordsProcessed": 11548,
       "recordsDiscarded": 4,
       "recordsWithoutCoordinates": 4,
+      "duplicateRecords": 0
+    },
+    {
+      "id": "RIPREE",
+      "url": "https://energia.serviciosmin.gob.es/Ripree/ExportarInstalaciones/Export",
+      "fetchedAt": "2026-11-26T14:09:48.266Z",
+      "status": "active",
+      "sourceUpdatedAt": "2026-11-20T13:11:00",
+      "sourceUpdatedAtRaw": "20/11/2026 13:11:00",
+      "recordsReceived": 43262,
+      "recordsProcessed": 12150,
+      "recordsDiscarded": 0,
+      "recordsWithoutCoordinates": 0,
+      "duplicateRecords": 0
+    },
+    {
+      "id": "OCM",
+      "url": "https://api.openchargemap.io/v3/poi/",
+      "fetchedAt": "2026-11-26T14:09:41.747Z",
+      "status": "skipped",
+      "note": "fuente omitida con --no-ocm",
+      "recordsReceived": 0,
+      "recordsProcessed": 0,
+      "recordsDiscarded": 0,
+      "recordsWithoutCoordinates": 0,
       "duplicateRecords": 0
     }
   ],
   "validation": {
     "ok": true,
-    "checkedAt": "2026-11-26T13:32:50.987Z",
+    "checkedAt": "2026-11-26T14:09:41.747Z",
     "checks": [
       {
         "name": "registros-mínimos",
         "ok": true,
-        "detail": "11549 estaciones válidas",
+        "detail": "11548 estaciones válidas",
         "severity": "error"
       },
       {
         "name": "identificadores-únicos",
         "ok": true,
-        "detail": "11549 IDs únicos para 11549 estaciones",
+        "detail": "11548 IDs únicos para 11548 estaciones",
         "severity": "error"
       },
       {
@@ -68,9 +94,21 @@
         "severity": "error"
       },
       {
+        "name": "variación-vs-anterior",
+        "ok": true,
+        "detail": "0.00% de variación respecto a 11548 estaciones",
+        "severity": "error"
+      },
+      {
+        "name": "fecha-fuente-no-regresiva",
+        "ok": true,
+        "detail": "fuente anterior 2026-11-26T15:08:26, actual 2026-11-26T15:09:41",
+        "severity": "warning"
+      },
+      {
         "name": "fichero-maestro",
         "ok": true,
-        "detail": "estaciones.json con 11549 registros",
+        "detail": "estaciones.json con 11548 registros",
         "severity": "error"
       },
       {
@@ -82,7 +120,7 @@
       {
         "name": "índices-coherentes",
         "ok": true,
-        "detail": "11549 estaciones indexadas",
+        "detail": "11548 estaciones indexadas",
         "severity": "error"
       },
       {
@@ -90,15 +128,85 @@
         "ok": true,
         "detail": "0 ficheros vacíos",
         "severity": "error"
+      },
+      {
+        "name": "cargadores-registros-mínimos",
+        "ok": true,
+        "detail": "12150 estaciones de recarga válidas",
+        "severity": "error"
+      },
+      {
+        "name": "cargadores-ids-únicos",
+        "ok": true,
+        "detail": "12150 IDs únicos para 12150 estaciones",
+        "severity": "error"
+      },
+      {
+        "name": "cargadores-coordenadas-válidas",
+        "ok": true,
+        "detail": "0 coordenadas inválidas",
+        "severity": "error"
+      },
+      {
+        "name": "cargadores-procedencia",
+        "ok": true,
+        "detail": "0 estaciones sin ID oficial o procedencia",
+        "severity": "error"
+      },
+      {
+        "name": "cargadores-conectores-válidos",
+        "ok": true,
+        "detail": "0 conectores con tipo o potencia inválidos",
+        "severity": "error"
+      },
+      {
+        "name": "cargadores-fichero-maestro",
+        "ok": true,
+        "detail": "cargadores/estaciones.json con 12150 registros",
+        "severity": "error"
+      },
+      {
+        "name": "cargadores-índice-coherente",
+        "ok": true,
+        "detail": "12150 estaciones indexadas por provincia",
+        "severity": "error"
+      },
+      {
+        "name": "cargadores-estadísticas-coherentes",
+        "ok": true,
+        "detail": "12150 estaciones en estadísticas",
+        "severity": "error"
+      },
+      {
+        "name": "cargadores-filas-malformadas",
+        "ok": true,
+        "detail": "0 filas malformadas descartadas de RIPREE",
+        "severity": "error"
+      },
+      {
+        "name": "secretos-no-expuestos",
+        "ok": true,
+        "detail": "0 URLs con credenciales",
+        "severity": "error"
+      },
+      {
+        "name": "cargadores-variación-vs-anterior",
+        "ok": true,
+        "detail": "0.00% de variación respecto a 12150 estaciones de recarga",
+        "severity": "error"
       }
     ]
   },
   "totals": {
-    "stations": 11549,
+    "stations": 11548,
     "provinces": 52,
     "municipalities": 3263,
     "discarded": 4,
     "duplicates": 0,
-    "withoutCoordinates": 4
+    "withoutCoordinates": 4,
+    "chargingStations": 12150,
+    "chargingPoints": 36052,
+    "chargingDuplicates": 0,
+    "malformedRipreeRows": 0
   }
 }

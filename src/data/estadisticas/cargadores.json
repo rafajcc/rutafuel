@@ -1,0 +1,131 @@
+{
+  "dataVersion": 2,
+  "generatedAt": "2026-11-26T14:09:41.747Z",
+  "sourceUpdatedAt": "2026-11-20T13:11:00",
+  "totals": {
+    "stations": 12150,
+    "points": 36052,
+    "maxPowerKw": 1000,
+    "duplicatesRemoved": 0,
+    "malformedRipreeRows": 0
+  },
+  "bySource": {
+    "MINETUR": 0,
+    "RIPREE": 12150,
+    "OCM": 0
+  },
+  "power": {
+    "count": 12150,
+    "min": 0.06,
+    "max": 1000,
+    "avg": 50.05
+  },
+  "status": {
+    "unknown": 12114,
+    "operational": 36,
+    "out-of-service": 0
+  },
+  "accessibility": {
+    "yes": 1117,
+    "no": 185,
+    "unknown": 10848
+  },
+  "connectors": [
+    {
+      "type": "TYPE2",
+      "stationCount": 9961,
+      "connectorCount": 10440,
+      "maxPowerKw": 200
+    },
+    {
+      "type": "CCS2",
+      "stationCount": 5358,
+      "connectorCount": 5654,
+      "maxPowerKw": 1000
+    },
+    {
+      "type": "CHADEMO",
+      "stationCount": 3278,
+      "connectorCount": 3308,
+      "maxPowerKw": 300
+    },
+    {
+      "type": "DOMESTIC_F",
+      "stationCount": 363,
+      "connectorCount": 374,
+      "maxPowerKw": 22
+    },
+    {
+      "type": "TYPE1",
+      "stationCount": 44,
+      "connectorCount": 45,
+      "maxPowerKw": 27.71
+    },
+    {
+      "type": "IEC60309_3P32",
+      "stationCount": 9,
+      "connectorCount": 9,
+      "maxPowerKw": 22
+    },
+    {
+      "type": "CCS1",
+      "stationCount": 6,
+      "connectorCount": 6,
+      "maxPowerKw": 180
+    },
+    {
+      "type": "IEC60309_1P16",
+      "stationCount": 5,
+      "connectorCount": 5,
+      "maxPowerKw": 7.4
+    },
+    {
+      "type": "DOMESTIC_E",
+      "stationCount": 4,
+      "connectorCount": 4,
+      "maxPowerKw": 2.3
+    },
+    {
+      "type": "TYPE3A",
+      "stationCount": 4,
+      "connectorCount": 4,
+      "maxPowerKw": 150
+    },
+    {
+      "type": "DOMESTIC_A",
+      "stationCount": 1,
+      "connectorCount": 1,
+      "maxPowerKw": 60
+    },
+    {
+      "type": "DOMESTIC_L",
+      "stationCount": 1,
+      "connectorCount": 1,
+      "maxPowerKw": 7.4
+    },
+    {
+      "type": "IEC60309_3P16",
+      "stationCount": 1,
+      "connectorCount": 1,
+      "maxPowerKw": 7.4
+    },
+    {
+      "type": "TESLA_EU",
+      "stationCount": 1,
+      "connectorCount": 1,
+      "maxPowerKw": 26
+    },
+    {
+      "type": "TYPE3C",
+      "stationCount": 1,
+      "connectorCount": 1,
+      "maxPowerKw": 100
+    }
+  ],
+  "quality": {
+    "withoutCoordinates": 0,
+    "withoutPower": 0,
+    "unknownStatus": 12114,
+    "unknownAccess": 10848
+  }
+}
