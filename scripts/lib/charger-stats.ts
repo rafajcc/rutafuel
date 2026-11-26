@@ -15,41 +15,85 @@ import type {
   SourceId,
 } from './types.js';
 
+type CenterAccumulator = { lat: number; lon: number; count: number };
+
+function round(value: number): number {
+  return Math.round(value * 1e6) / 1e6;
+}
+
+function centerOf(accumulator: CenterAccumulator | undefined) {
+  if (!accumulator || accumulator.count === 0) return { lat: 0, lon: 0 };
+  return {
+    lat: round(accumulator.lat / accumulator.count),
+    lon: round(accumulator.lon / accumulator.count),
+  };
+}
+
 export function buildChargerIndex(stations: ChargingStation[]): ChargerIndex {
   const provinces = new Map<string, ChargerIndex['provinces'][number]>();
   const municipalities = new Map<string, ChargerIndex['municipalities'][number]>();
+  const provinceCenters = new Map<string, CenterAccumulator>();
+  const municipalityCenters = new Map<string, CenterAccumulator>();
+
+  const register = (map: Map<string, CenterAccumulator>, key: string, station: ChargingStation) => {
+    if (!Number.isFinite(station.lat) || !Number.isFinite(station.lon)) return;
+    const entry = map.get(key) ?? { lat: 0, lon: 0, count: 0 };
+    entry.lat += station.lat;
+    entry.lon += station.lon;
+    entry.count += 1;
+    map.set(key, entry);
+  };
+
+  const upgradePower = (current: number | null, value: number | null): number | null => {
+    if (value === null) return current;
+    return current === null ? value : Math.max(current, value);
+  };
 
   for (const station of stations) {
-    const province = provinces.get(station.provinceId);
+    const provinceKey = station.provinceId;
+    const municipalityKey = `${station.provinceId}/${station.municipalityId}`;
+    register(provinceCenters, provinceKey, station);
+    register(municipalityCenters, municipalityKey, station);
+
+    const province = provinces.get(provinceKey);
     if (province) {
       province.stationCount += 1;
-      province.maxPowerKw =
-        province.maxPowerKw === null
-          ? station.maxPowerKw
-          : station.maxPowerKw === null
-            ? province.maxPowerKw
-            : Math.max(province.maxPowerKw, station.maxPowerKw);
+      province.pointCount += station.pointCount;
+      province.maxPowerKw = upgradePower(province.maxPowerKw, station.maxPowerKw);
     } else {
-      provinces.set(station.provinceId, {
+      provinces.set(provinceKey, {
         id: station.provinceId,
         name: station.province,
         slug: station.provinceSlug,
         stationCount: 1,
+        pointCount: station.pointCount,
         maxPowerKw: station.maxPowerKw,
+        center: { lat: 0, lon: 0 },
       });
     }
 
-    const municipality = municipalities.get(station.municipalityId);
-    if (municipality) municipality.stationCount += 1;
-    else {
-      municipalities.set(station.municipalityId, {
+    const municipality = municipalities.get(municipalityKey);
+    if (municipality) {
+      municipality.stationCount += 1;
+      municipality.pointCount += station.pointCount;
+      municipality.maxPowerKw = upgradePower(municipality.maxPowerKw, station.maxPowerKw);
+    } else {
+      municipalities.set(municipalityKey, {
         id: station.municipalityId,
         name: station.municipality,
         slug: station.municipalitySlug,
         provinceId: station.provinceId,
         stationCount: 1,
+        pointCount: station.pointCount,
+        maxPowerKw: station.maxPowerKw,
+        center: { lat: 0, lon: 0 },
       });
     }
+  }
+
+  for (const province of provinces.values()) province.center = centerOf(provinceCenters.get(province.id));
+  for (const municipality of municipalities.values()) {
+    municipality.center = centerOf(municipalityCenters.get(`${municipality.provinceId}/${municipality.id}`));
   }
 
   return {

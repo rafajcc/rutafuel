@@ -6,6 +6,12 @@ import municipiosJson from '../data/estadisticas/municipios.json';
 import resumenJson from '../data/estadisticas/resumen.json';
 import metadataJson from '../data/metadata.json';
 import cargadoresJson from '../data/estadisticas/cargadores.json';
+import cargadorIndiceJson from '../data/cargadores/indice.json';
+import {
+  buildChargingMunicipalityPages,
+  buildChargingProvincePages,
+  type ChargingIndexLike,
+} from './charging-pages.js';
 import {
   buildMunicipalityPages,
   buildProvincePages,
@@ -19,6 +25,7 @@ export const buscadorEntries = buscadorJson as unknown as SearchLike[];
 export const resumen = resumenJson;
 export const metadata = metadataJson;
 export const cargadores = cargadoresJson;
+export const cargadorIndice = cargadorIndiceJson as unknown as ChargingIndexLike;
 
 export const provincePages = buildProvincePages(provinciasStats);
 export const municipalityPages = buildMunicipalityPages(
@@ -27,7 +34,11 @@ export const municipalityPages = buildMunicipalityPages(
   buscadorEntries,
 );
 
+export const chargingProvincePages = buildChargingProvincePages(cargadorIndice);
+export const chargingMunicipalityPages = buildChargingMunicipalityPages(cargadorIndice);
+
 export const mineturSource = metadata.sources.find((source) => source.id === 'MINETUR');
+export const ripreeSource = metadata.sources.find((source) => source.id === 'RIPREE');
 
 export const provinceBySlug = new Map(provincePages.map((page) => [page.slug, page]));
 

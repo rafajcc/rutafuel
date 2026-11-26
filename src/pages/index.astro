@@ -3,6 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SearchPanel from '../components/SearchPanel.astro';
 import {
   cargadores,
+  chargingMunicipalityPages,
+  chargingProvincePages,
   metadata,
   mineturSource,
   municipalityPages,
@@ -61,6 +63,8 @@ const structuredData = {
           : undefined
       }
       chargingStations={cargadores.totals.stations}
+      chargingMunicipalities={chargingMunicipalityPages.length}
+      chargingProvinceUrl={chargingProvincePages[0]?.url}
     />
   </div>
 

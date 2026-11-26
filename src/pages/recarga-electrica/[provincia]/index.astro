@@ -1,0 +1,141 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ChargingComparador from '../../../components/ChargingComparador.astro';
+import ChargingTable from '../../../components/ChargingTable.astro';
+import { connectorLabel, hasRecentKnownStatus } from '../../../lib/charging.js';
+import type { ChargingProvincePage } from '../../../lib/charging-pages.js';
+import {
+  cargadores,
+  chargingMunicipalityPages,
+  chargingProvincePages,
+} from '../../../lib/page-data.js';
+import { readChargingProvinceIndex } from '../../../lib/read-data.js';
+import { breadcrumbSchema, chargingStationListSchema } from '../../../lib/seo.js';
+
+interface Props {
+  page: ChargingProvincePage;
+}
+
+export function getStaticPaths() {
+  return chargingProvincePages.map((page) => ({
+    params: { provincia: page.slug },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+const index = await readChargingProvinceIndex(page.id);
+const referenceDate = cargadores.sourceUpdatedAt;
+const ranked = index.stations
+  .filter((station) => station.maxPowerKw !== null)
+  .sort(
+    (a, b) =>
+      (b.maxPowerKw ?? 0) - (a.maxPowerKw ?? 0) || a.id.localeCompare(b.id),
+  )
+  .slice(0, 10);
+
+const connectorCounts = new Map<string, number>();
+const operators = new Set<string>();
+for (const station of index.stations) {
+  if (station.operator) operators.add(station.operator);
+  for (const connector of station.connectors) {
+    connectorCounts.set(connector.type, (connectorCounts.get(connector.type) ?? 0) + 1);
+  }
+}
+const topConnectors = [...connectorCounts]
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  .slice(0, 6)
+  .map(([type, count]) => `${connectorLabel(type)} (${count})`);
+const connectorTypes = [...connectorCounts.keys()].sort((a, b) => a.localeCompare(b, 'es'));
+const operatorList = [...operators].sort((a, b) => a.localeCompare(b, 'es'));
+const showStatus = index.stations.some((station) => hasRecentKnownStatus(station, referenceDate));
+
+const localMunicipalities = chargingMunicipalityPages
+  .filter((item) => item.provinceId === page.id)
+  .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+const siteUrl = Astro.site?.toString() ?? 'https://rutafuel.es/';
+const crumbs = [
+  { name: 'Inicio', url: '/' },
+  { name: 'Recarga eléctrica', url: '/#recarga' },
+  { name: page.name },
+];
+const structuredData = [
+  breadcrumbSchema(crumbs, siteUrl),
+  chargingStationListSchema(ranked, siteUrl),
+];
+---
+
+<BaseLayout
+  title={`Puntos de recarga eléctrica en ${page.name} · RutaFuel`}
+  description={`Consulta ${page.stationCount} instalaciones de recarga eléctrica en ${page.name}, con ${page.pointCount} puntos declarados y potencia máxima de ${page.maxPowerKw ?? 0} kW. Filtra por conector y potencia.`}
+  breadcrumbs={crumbs}
+  structuredData={structuredData}
+>
+  <section class="rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+    <h1 class="text-3xl font-bold tracking-tight">Recarga eléctrica en {page.name}</h1>
+    <p class="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">
+      En {page.name} hay {page.stationCount.toLocaleString('es-ES')} instalaciones de recarga
+      registradas con {page.pointCount.toLocaleString('es-ES')} puntos declarados por la fuente. La
+      potencia máxima registrada es de {page.maxPowerKw?.toLocaleString('es-ES') ?? '—'} kW
+      {topConnectors.length > 0 ? ` y los conectores más habituales son ${topConnectors.join(', ')}.` : '.'}
+      Son datos de instalaciones registradas: <strong>no acreditan disponibilidad en tiempo real</strong>.
+    </p>
+    <dl class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Instalaciones</dt>
+        <dd class="text-xl font-bold">{index.stationCount.toLocaleString('es-ES')}</dd>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Puntos declarados</dt>
+        <dd class="text-xl font-bold">{index.pointCount.toLocaleString('es-ES')}</dd>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Potencia máxima</dt>
+        <dd class="text-xl font-bold">{index.maxPowerKw?.toLocaleString('es-ES') ?? '—'} kW</dd>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Tipos de conector</dt>
+        <dd class="text-xl font-bold">{connectorTypes.length}</dd>
+      </div>
+    </dl>
+    <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">
+      Fuente actualizada el {referenceDate?.slice(0, 10) ?? '—'}.
+      {showStatus
+        ? 'Solo se muestra el estado declarado cuando la fuente lo publica con fecha reciente.'
+        : 'La fuente no publica un estado reciente: no se ofrece filtro de disponibilidad.'}
+    </p>
+  </section>
+
+  <section aria-labelledby="ranking-recarga" class="mt-8">
+    <h2 id="ranking-recarga" class="text-xl font-semibold">Cargadores de mayor potencia en {page.name}</h2>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Ranking por potencia máxima registrada, no por disponibilidad.
+    </p>
+    <ChargingTable stations={ranked} />
+  </section>
+
+  <div data-ad-slot="contenido" class="ad-slot mt-8" aria-hidden="true"></div>
+
+  <ChargingComparador
+    source={`/data/cargadores/provincias/${page.id}.json`}
+    center={page.center}
+    context={page.name}
+    referenceDate={referenceDate}
+    connectors={connectorTypes}
+    operators={operatorList}
+  />
+
+  <section aria-labelledby="municipios-recarga" class="mt-8">
+    <h2 id="municipios-recarga" class="text-xl font-semibold">Municipios de {page.name} con cargadores</h2>
+    <ul class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        localMunicipalities.map((item) => (
+          <li class="rounded-lg bg-white px-3 py-2 text-sm dark:bg-slate-900">
+            <a href={item.url}>{item.name}</a>
+            <span class="float-right text-slate-500">{item.stationCount} instalaciones</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>

@@ -384,7 +384,10 @@ export interface ChargerIndex {
     name: string;
     slug: string;
     stationCount: number;
+    pointCount: number;
     maxPowerKw: number | null;
+    /** Centroide calculado de las estaciones reales, no una ubicación oficial. */
+    center: { lat: number; lon: number };
   }>;
   municipalities: Array<{
     id: string;
@@ -392,5 +395,8 @@ export interface ChargerIndex {
     slug: string;
     provinceId: string;
     stationCount: number;
+    pointCount: number;
+    maxPowerKw: number | null;
+    center: { lat: number; lon: number };
   }>;
 }

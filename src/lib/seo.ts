@@ -31,6 +31,64 @@ export function breadcrumbSchema(crumbs: SeoCrumb[], siteUrl: string) {
   };
 }
 
+export interface SeoChargingStation {
+  id: string;
+  name?: string;
+  address?: string;
+  municipality?: string;
+  province?: string;
+  postalCode?: string;
+  operator?: string;
+  lat: number;
+  lon: number;
+  maxPowerKw: number | null;
+  connectors: Array<{ type: string }>;
+}
+
+/** Datos estructurados de recarga: sin disponibilidad ni estado inferido. */
+export function chargingStationListSchema(stations: SeoChargingStation[], siteUrl: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    numberOfItems: stations.length,
+    itemListElement: stations.map((station, index) => {
+      const address =
+        station.address || station.municipality || station.province
+          ? {
+              '@type': 'PostalAddress',
+              ...(station.address ? { streetAddress: station.address } : {}),
+              ...(station.municipality ? { addressLocality: station.municipality } : {}),
+              ...(station.province ? { addressRegion: station.province } : {}),
+              ...(station.postalCode ? { postalCode: station.postalCode } : {}),
+              addressCountry: 'ES',
+            }
+          : undefined;
+      const details = [
+        station.maxPowerKw === null ? null : `Potencia máxima: ${station.maxPowerKw} kW`,
+        station.connectors.length > 0
+          ? `Conectores: ${station.connectors.map((connector) => connector.type).join(', ')}`
+          : null,
+      ].filter((detail): detail is string => detail !== null);
+
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': 'ElectricVehicleChargingStation',
+          '@id': `${siteUrl.replace(/\/$/, '')}#cargador-${station.id}`,
+          name: station.name ?? `Punto de recarga ${station.id}`,
+          ...(address ? { address } : {}),
+          geo: { '@type': 'GeoCoordinates', latitude: station.lat, longitude: station.lon },
+          ...(details.length > 0 ? { description: details.join(' · ') } : {}),
+          ...(station.operator
+            ? { operatedBy: { '@type': 'Organization', name: station.operator } }
+            : {}),
+        },
+      };
+    }),
+  };
+}
+
 export function gasStationListSchema(
   stations: SeoStation[],
   siteUrl: string,

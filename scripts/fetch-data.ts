@@ -1,6 +1,11 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  buildChargerIndexes,
+  chargerMunicipalityIndexPath,
+  chargerProvinceIndexPath,
+} from './lib/charger-indexes.js';
 import { buildChargerIndex, buildChargerStatistics } from './lib/charger-stats.js';
 import { deduplicateChargers } from './lib/dedupe.js';
 import { MINETUR_URL, normalizeStations, validateResponse } from './lib/gasolineras.js';
@@ -323,9 +328,16 @@ async function main(): Promise<void> {
     duplicatesRemoved: merged.merged,
     malformedRipreeRows: ripreeNormalized.malformedRows,
   });
+  const chargerGeoIndexes = buildChargerIndexes(merged.stations);
   files['cargadores/estaciones.json'] = merged.stations;
   files['cargadores/indice.json'] = chargerIndex;
   files['estadisticas/cargadores.json'] = chargerStats;
+  for (const index of chargerGeoIndexes.provinces.values()) {
+    files[chargerProvinceIndexPath(index.id)] = index;
+  }
+  for (const index of chargerGeoIndexes.municipalities.values()) {
+    files[chargerMunicipalityIndexPath(index.provinceId, index.id)] = index;
+  }
 
   const sources = [mineturSource, ripreeSource, ocmSource];
   const metadata: DatasetMetadata = {

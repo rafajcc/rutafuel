@@ -1,0 +1,152 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import ChargingComparador from '../../../../components/ChargingComparador.astro';
+import ChargingTable from '../../../../components/ChargingTable.astro';
+import { connectorLabel, hasRecentKnownStatus } from '../../../../lib/charging.js';
+import type { ChargingMunicipalityPage } from '../../../../lib/charging-pages.js';
+import { haversineKm } from '../../../../lib/geo.js';
+import { cargadores, chargingMunicipalityPages } from '../../../../lib/page-data.js';
+import { readChargingMunicipalityIndex } from '../../../../lib/read-data.js';
+import { breadcrumbSchema, chargingStationListSchema } from '../../../../lib/seo.js';
+
+interface Props {
+  page: ChargingMunicipalityPage;
+}
+
+export function getStaticPaths() {
+  return chargingMunicipalityPages.map((page) => ({
+    params: { provincia: page.provinceSlug, municipio: page.slug },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+const index = await readChargingMunicipalityIndex(page.provinceId, page.id);
+const referenceDate = cargadores.sourceUpdatedAt;
+const ranked = index.stations
+  .filter((station) => station.maxPowerKw !== null)
+  .sort(
+    (a, b) =>
+      (b.maxPowerKw ?? 0) - (a.maxPowerKw ?? 0) || a.id.localeCompare(b.id),
+  )
+  .slice(0, 10);
+
+const connectorCounts = new Map<string, number>();
+const operators = new Set<string>();
+for (const station of index.stations) {
+  if (station.operator) operators.add(station.operator);
+  for (const connector of station.connectors) {
+    connectorCounts.set(connector.type, (connectorCounts.get(connector.type) ?? 0) + 1);
+  }
+}
+const topConnectors = [...connectorCounts]
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  .slice(0, 5)
+  .map(([type, count]) => `${connectorLabel(type)} (${count})`);
+const connectorTypes = [...connectorCounts.keys()].sort((a, b) => a.localeCompare(b, 'es'));
+const operatorList = [...operators].sort((a, b) => a.localeCompare(b, 'es'));
+const showStatus = index.stations.some((station) => hasRecentKnownStatus(station, referenceDate));
+
+const related = chargingMunicipalityPages
+  .filter((item) => item.provinceId === page.provinceId && item.id !== page.id)
+  .map((item) => ({ item, distance: haversineKm(page.center, item.center) }))
+  .filter(({ distance }) => Number.isFinite(distance))
+  .sort((a, b) => a.distance - b.distance)
+  .slice(0, 8);
+
+const siteUrl = Astro.site?.toString() ?? 'https://rutafuel.es/';
+const crumbs = [
+  { name: 'Inicio', url: '/' },
+  { name: 'Recarga eléctrica', url: '/#recarga' },
+  {
+    name: index.provinceName ?? page.provinceName,
+    url: `/recarga-electrica/${page.provinceSlug}/`,
+  },
+  { name: page.name },
+];
+const structuredData = [breadcrumbSchema(crumbs, siteUrl), chargingStationListSchema(ranked, siteUrl)];
+---
+
+<BaseLayout
+  title={`Cargadores eléctricos en ${page.name} (${page.provinceName}) · RutaFuel`}
+  description={`Consulta ${page.stationCount} instalaciones de recarga en ${page.name}, ${page.provinceName}. Potencia máxima ${page.maxPowerKw ?? 0} kW y ${page.pointCount} puntos declarados. Filtra por conector y potencia.`}
+  breadcrumbs={crumbs}
+  structuredData={structuredData}
+>
+  <section class="rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+    <h1 class="text-3xl font-bold tracking-tight">Recarga eléctrica en {page.name}</h1>
+    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+      {page.provinceName} · {index.stationCount} instalaciones · {index.pointCount} puntos declarados
+    </p>
+    <p class="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">
+      En {page.name} se han registrado {page.stationCount} instalaciones de recarga con una potencia
+      máxima de {page.maxPowerKw?.toLocaleString('es-ES') ?? '—'} kW
+      {topConnectors.length > 0 ? `. Los conectores más habituales son ${topConnectors.join(', ')}` : ''}.
+      Estos datos describen instalaciones registradas, no disponibilidad en tiempo real: la fuente
+      no garantiza que todos los puntos estén operativos.
+    </p>
+    <dl class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Instalaciones</dt>
+        <dd class="text-xl font-bold">{index.stationCount}</dd>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Puntos declarados</dt>
+        <dd class="text-xl font-bold">{index.pointCount}</dd>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Potencia máxima</dt>
+        <dd class="text-xl font-bold">{index.maxPowerKw?.toLocaleString('es-ES') ?? '—'} kW</dd>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Operadores</dt>
+        <dd class="text-xl font-bold">{operatorList.length}</dd>
+      </div>
+    </dl>
+    <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">
+      Fuente actualizada el {referenceDate?.slice(0, 10) ?? '—'}.
+      {showStatus
+        ? 'Solo se muestra el estado declarado cuando la fuente lo publica con fecha reciente.'
+        : 'La fuente no publica un estado reciente: no se ofrece filtro de disponibilidad.'}
+    </p>
+  </section>
+
+  <section aria-labelledby="ranking-recarga" class="mt-8">
+    <h2 id="ranking-recarga" class="text-xl font-semibold">Cargadores de mayor potencia en {page.name}</h2>
+    <ChargingTable stations={ranked} />
+  </section>
+
+  <div data-ad-slot="contenido" class="ad-slot mt-8" aria-hidden="true"></div>
+
+  <ChargingComparador
+    source={`/data/cargadores/municipios/${page.provinceId}/${page.id}.json`}
+    center={page.center}
+    context={page.name}
+    referenceDate={referenceDate}
+    connectors={connectorTypes}
+    operators={operatorList}
+  />
+
+  <section aria-labelledby="relacionadas-recarga" class="mt-8">
+    <h2 id="relacionadas-recarga" class="text-xl font-semibold">Localidades cercanas en {page.provinceName}</h2>
+    <ul class="mt-4 flex flex-wrap gap-2">
+      {
+        related.map(({ item, distance }) => (
+          <li>
+            <a
+              href={item.url}
+              class="inline-block rounded-full border border-slate-300 px-3 py-1 text-sm dark:border-slate-700"
+            >
+              {item.name} · {Math.round(distance)} km
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">
+      <a href={`/recarga-electrica/${page.provinceSlug}/`}>
+        Ver todos los cargadores de {page.provinceName}
+      </a>
+    </p>
+  </section>
+</BaseLayout>

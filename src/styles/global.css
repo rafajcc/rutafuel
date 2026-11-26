@@ -51,3 +51,9 @@ a:hover {
   min-width: 34px;
   background: #1d4ed8;
 }
+
+/* Los cargadores usan icono eléctrico y color por tramo de potencia. */
+.map-pin--charging {
+  border-radius: 8px;
+  font-size: 12px;
+}

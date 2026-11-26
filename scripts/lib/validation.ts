@@ -222,6 +222,54 @@ export function validateDataset(input: DatasetValidationInput): ValidationResult
       indexedChargers === chargers.stations.length,
       `${indexedChargers} estaciones indexadas por provincia`,
     );
+    const chargerProvinceFiles = Object.entries(input.files).filter(([name]) =>
+      name.startsWith('cargadores/provincias/'),
+    );
+    const chargerMunicipalityFiles = Object.entries(input.files).filter(([name]) =>
+      name.startsWith('cargadores/municipios/'),
+    );
+    const chargerIndexedCount = [...chargerProvinceFiles, ...chargerMunicipalityFiles].reduce(
+      (total, [, value]) =>
+        total + ((value as { stationCount?: number }).stationCount ?? 0),
+      0,
+    );
+    add(
+      'cargadores-índices-generados',
+      chargerProvinceFiles.length > 0 && chargerMunicipalityFiles.length > 0,
+      `${chargerProvinceFiles.length} índices de provincia, ${chargerMunicipalityFiles.length} de municipio`,
+    );
+    add(
+      'cargadores-índices-coherentes',
+      chargerProvinceFiles.length > 0 &&
+        chargerMunicipalityFiles.length > 0 &&
+        chargerIndexedCount === chargers.stations.length * 2,
+      `${chargerIndexedCount} registros indexados para ${chargers.stations.length} estaciones`,
+    );
+
+    const allChargerIndexFiles = [...chargerProvinceFiles, ...chargerMunicipalityFiles].map(
+      ([, value]) =>
+        value as {
+          center?: { lat?: number; lon?: number };
+          stations?: Array<Record<string, unknown>>;
+        },
+    );
+    const badCenters = allChargerIndexFiles.filter(
+      (index) =>
+        !Number.isFinite(index.center?.lat) ||
+        !Number.isFinite(index.center?.lon) ||
+        Math.abs(index.center!.lat!) > 90 ||
+        Math.abs(index.center!.lon!) > 180,
+    );
+    const withRaw = allChargerIndexFiles.some((index) =>
+      (index.stations ?? []).some((station) => 'raw' in station),
+    );
+    add(
+      'cargadores-centros-válidos',
+      allChargerIndexFiles.length > 0 && badCenters.length === 0,
+      `${badCenters.length} índices con centro inválido`,
+    );
+    add('cargadores-índices-sin-raw', !withRaw, 'Los índices públicos no incluyen auditoría raw');
+
     add(
       'cargadores-estadísticas-coherentes',
       chargers.stats.totals.stations === chargers.stations.length,

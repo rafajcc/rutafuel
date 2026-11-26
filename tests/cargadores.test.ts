@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { buildChargerIndexes } from '../scripts/lib/charger-indexes.js';
 import { buildChargerIndex, buildChargerStatistics } from '../scripts/lib/charger-stats.js';
 import type { FuelStation, NormalizeResult } from '../scripts/lib/types.js';
 import { validateDataset } from '../scripts/lib/validation.js';
@@ -26,7 +27,9 @@ describe('índices y estadísticas de cargadores', () => {
       name: 'Madrid',
       slug: 'madrid-madrid',
       stationCount: 2,
+      pointCount: 2,
       maxPowerKw: 150,
+      center: { lat: 40, lon: -3 },
     });
     assert.equal(index.municipalities.find((item) => item.id === 'madrid-madrid')?.stationCount, 2);
     assert.equal(index.municipalities.find((item) => item.id === 'barcelona-barcelona')?.stationCount, 1);
@@ -112,7 +115,8 @@ function validateChargers(
     withoutCoordinates: 0,
     invalidPrices: 0,
   };
-  const files = {
+  const chargerIndexes = buildChargerIndexes(allStations);
+  const files: Record<string, unknown> = {
     'gasolineras/estaciones.json': fuels,
     'gasolineras/provincias/11.json': { stationCount: fuels.length },
     'gasolineras/municipios/11/100.json': { stationCount: fuels.length },
@@ -121,6 +125,13 @@ function validateChargers(
       sources: [{ url: options.metadataUrl ?? 'https://api.openchargemap.io/v3/poi/?countrycode=ES' }],
     },
   };
+  for (const [id, index] of chargerIndexes.provinces) {
+    files[`cargadores/provincias/${id}.json`] = index;
+  }
+  for (const [key, index] of chargerIndexes.municipalities) {
+    const [provinceId, id] = key.split('/');
+    files[`cargadores/municipios/${provinceId}/${id}.json`] = index;
+  }
   const previous = options.previousStations
     ? {
         dataVersion: 2,

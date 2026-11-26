@@ -2,8 +2,9 @@
 
 Plataforma estática para comparar precios de carburantes y puntos de recarga eléctrica en España.
 El proyecto sigue un desarrollo por hitos: **están implementados el HITO 1 (proyecto base y
-carburantes), el HITO 2 (ingesta de recarga) y el HITO 3 (comparador de carburantes)**. El comparador
-eléctrico y el planificador de rutas pertenecen a hitos posteriores.
+carburantes), el HITO 2 (ingesta de recarga), el HITO 3 (comparador de carburantes) y el HITO 4
+(comparador eléctrico)**. El planificador de rutas y la automatización de despliegue pertenecen a
+hitos posteriores.
 
 ## Requisitos
 
@@ -43,8 +44,9 @@ validación crítica, el pipeline se detiene y **no modifica** los datos anterio
 
 `npm run dev` y `npm run build` ejecutan `scripts/prepare-web-data.ts` mediante los hooks `predev` y
 `prebuild`: copian a `public/data/` una versión ligera de los índices por provincia y municipio (sin
-`raw`) y el índice del buscador. Ese directorio es generado y está ignorado por Git; se reconstruye
-siempre desde `src/data`, que sigue siendo la fuente de verdad para el build.
+`raw`) de carburantes y recarga, el buscador de localidades y `cargadores/buscador.json`. Ese directorio
+es generado y está ignorado por Git; se reconstruye siempre desde `src/data`, que sigue siendo la
+fuente de verdad para el build.
 
 ## Configuración
 
@@ -112,7 +114,9 @@ src/data/
 │   └── municipios/<idProv>/<idMun>.json
 └── cargadores/
     ├── estaciones.json                 # dataset completo de recarga (con `raw` y `sources`)
-    └── indice.json                     # provincias y municipios con recuentos
+    ├── indice.json                     # provincias y municipios con recuentos, potencia y centroide
+    ├── provincias/<id>.json            # estaciones ligeras de esa provincia
+    └── municipios/<idProv>/<idMun>.json
 ```
 
 `metadata.sources` mantiene MINETUR en primer lugar por compatibilidad con la portada actual.
@@ -136,8 +140,26 @@ src/data/
   configurable en `TILE_PROVIDERS` (`osm` por defecto). Enlaces externos a Google Maps y Waze.
 - **SEO técnico**: `sitemap.xml`, `robots.txt`, canonical, Open Graph, metadatos por página y datos
   estructurados. Modo claro/oscuro y huecos `data-ad-slot` con altura reservada.
-- **Modo eléctrico informativo**: la portada muestra el número real de puntos de recarga y permite
-  guardar el tipo de recarga, pero el comparador eléctrico y sus filtros pertenecen al HITO 4.
+## Comparador eléctrico (HITO 4)
+
+- **Portada (`#recarga`)**: el modo eléctrico busca municipios con cargadores desde
+  `data/cargadores/buscador.json`, permite geolocalización y guarda el tipo de recarga en
+  `rf-charge`. Al entrar en una página de recarga se aplica esa preferencia.
+- **Páginas geográficas**: 51 provincias y 867 municipios. Solo se generan municipios con al menos
+  3 instalaciones, potencia máxima conocida y centroide válido. Incluyen ranking por potencia,
+  estadísticas reales, distribución de conectores, enlaces internos, breadcrumbs y JSON-LD
+  (`BreadcrumbList` + `ElectricVehicleChargingStation`). Están en `sitemap.xml`.
+- **Comparador**: carga solo el JSON de la provincia o municipio visitado. Ordena por distancia
+  (Haversine) o mayor potencia; filtra por tramo (lenta < 22 kW, rápida 22–<150 kW, ultrarrápida
+  ≥ 150 kW), potencia mínima, conector y operador. El origen puede fijarse con `?lat=&lon=`.
+- **Estado**: el filtro de estado solo se muestra si existe algún estado conocido con fecha dentro
+  de 365 días respecto a `cargadores.sourceUpdatedAt`. Con los datos reales casi todos son
+  `unknown`, así que la interfaz dice explícitamente que no se muestra disponibilidad.
+- **Mapa**: `createChargingMap()` reutiliza Leaflet y su carga diferida. Iconos por tramo de potencia,
+  popups con potencia/conectores/operador y enlaces a Google Maps y Waze. Agrupación por rejilla con
+  muchos marcadores y proveedor de teselas configurable en `TILE_PROVIDERS`.
+- **Datos publicados**: los índices llevan procedencia resumida (sin URLs sensibles), conectores,
+  potencia y `updatedAt`, pero nunca `raw`. La ingesta valida su coherencia antes de escribir.
 
 ## Arquitectura
 
@@ -153,13 +175,14 @@ La información detallada de decisiones, modelos y umbrales de validación está
 - [x] HITO 3 — Comparador de carburantes: portada, buscador, geolocalización, páginas SEO de
       provincias/municipios, ranking, filtros en cliente y mapa diferido. 59 pruebas, `check` y
       `build` correctos (1.133 rutas).
-- [ ] HITO 4 — Comparador eléctrico (páginas, mapa, potencia, conectores y SEO).
+- [x] HITO 4 — Comparador eléctrico: páginas SEO, mapa de cargadores, filtros de potencia y
+      conectores, listados y buscador eléctrico en portada. 67 pruebas, `check` y `build` correctos
+      (2.051 rutas).
 - [ ] HITO 5 — Planificador de rutas (geocodificación, OSRM y estaciones sobre la geometría).
 - [ ] HITO 6 — Optimización, GitHub Actions y despliegue en Plesk.
 
-Pendiente para el HITO 3: verificación de Open Charge Map con una `OCM_API_KEY` real (sin clave la
-fuente queda registrada como `skipped`). El planificador y el comparador eléctrico siguen fuera de
-alcance de este hito.
+Pendiente: verificación de Open Charge Map con una `OCM_API_KEY` real (sin clave la fuente queda
+registrada como `skipped`). El planificador sigue fuera de alcance de este hito.
 
 ## Aviso
 

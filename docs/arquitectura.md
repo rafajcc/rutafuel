@@ -1,20 +1,21 @@
 # Decisiones de arquitectura
 
-## Alcance actual (HITO 3)
+## Alcance actual (HITO 4)
 
 Sitio estático generado con Astro, sin backend. El navegador no necesita Node.js para funcionar; la
-ingesta se ejecuta en Node.js y produce JSON versionado que se publica junto al sitio. El HITO 3 añade
-la interfaz de carburantes: portada con buscador y geolocalización, páginas SEO de provincias y
-municipios, comparador en cliente y mapa Leaflet cargado bajo demanda. El comparador eléctrico
-(HITO 4) y el planificador (HITO 5) siguen pendientes.
+ingesta se ejecuta en Node.js y produce JSON versionado que se publica junto al sitio. El HITO 3 añadió
+la interfaz de carburantes y el HITO 4 añade la de recarga: portada con buscador eléctrico, páginas SEO
+de provincias y municipios, comparador en cliente y mapa Leaflet cargado bajo demanda. El planificador
+(HITO 5) y la automatización (HITO 6) siguen pendientes.
 
 ## Stack y versiones
 
 - Astro 7 (SSG), TypeScript estricto y Tailwind 4 (plugin de Vite).
 - `tsx` para ejecutar scripts TypeScript sin configuración adicional.
 - Pruebas con `node:test` (incluido en Node.js), sin dependencias de test adicionales.
-- Leaflet 1.9 y `@types/leaflet` son las únicas dependencias nuevas del HITO 3. `sitemap.xml` y
-  `robots.txt` son endpoints de Astro: no se añade ningún plugin de SEO.
+- Leaflet 1.9 y `@types/leaflet` son las únicas dependencias nuevas del HITO 3; el HITO 4 las reutiliza
+  sin añadir paquetes. `sitemap.xml` y `robots.txt` son endpoints de Astro: no se añade ningún plugin
+  de SEO.
 - RBush/Turf y proveedores externos de geocodificación/enrutado **no se instalan todavía**: pertenecen
   al HITO 5.
 
@@ -124,9 +125,16 @@ procedencia en lugar de perder información.
 `gasolineras/estaciones.json` y `cargadores/estaciones.json` contienen los datasets completos y se
 usan en el build para páginas estáticas. Para el navegador se generan índices por provincia y
 municipio con los registros completos de ese ámbito. `gasolineras/indice.json` y
-`cargadores/indice.json` son catálogos ligeros con identificadores, nombres, slugs y recuentos.
-`estadisticas/cargadores.json` resume totales, potencias, conectores y calidad. `metadata.json`
-usa `DATA_VERSION = 2` y mantiene MINETUR como primera fuente por compatibilidad con la portada.
+`cargadores/indice.json` son catálogos ligeros con identificadores, nombres, slugs, recuentos,
+potencia máxima y centroide calculado de las estaciones. `estadisticas/cargadores.json` resume
+totales, potencias, conectores y calidad. `metadata.json` usa `DATA_VERSION = 2` y mantiene MINETUR
+como primera fuente por compatibilidad con la portada.
+
+En el HITO 4 se añaden `cargadores/provincias/<id>.json` y
+`cargadores/municipios/<provincia>/<id>.json`. Cada índice incluye `stationCount`, `pointCount`,
+`maxPowerKw`, `center` y estaciones ligeras: conservan `officialId`, conectores, potencia, `updatedAt`
+y procedencia resumida (`source` + `id` + fecha), pero nunca `raw` ni URLs con credenciales. El
+centroide es aritmético sobre las estaciones reales, no una ubicación oficial.
 
 El planificador de rutas (HITO 5) añadirá una rejilla espacial con celdas y una interfaz de búsqueda
 por geometría. La decisión entre RBush y Turf se tomará cuando se conozca el volumen y el patrón de
@@ -146,6 +154,9 @@ consulta; no se añaden dependencias ahora.
 - La normalización de texto para búsquedas vive por duplicado en `scripts/lib/search-index.ts` y
   `src/lib/search.ts`. Es intencionado: mantiene desacoplados el pipeline y el navegador con la misma
   regla (NFD, sin diacríticos, minúsculas, caracteres no alfanuméricos → espacio).
+- `cargadores/buscador.json` se deriva de `cargadores/indice.json` con el mismo criterio de páginas
+  (≥ 3 instalaciones y centroide válido). La portada lo usa para sugerir municipios con cargadores y
+  para elegir el más cercano con geolocalización.
 
 ## Páginas, comparador y mapa (HITO 3)
 
@@ -168,8 +179,32 @@ consulta; no se añaden dependencias ahora.
   ahora). Cambiar de proveedor no obliga a reescribir marcadores ni filtros. La atribución de
   OpenStreetMap se muestra en el mapa.
 - La portada usa el mismo índice ligero para sugerir localidades y, con geolocalización, elegir la
-  más cercana. El modo eléctrico es informativo en este hito: muestra el recuento real de recarga y
-  guarda la preferencia, pero no ofrece comparador ni filtros; eso corresponde al HITO 4.
+  más cercana. El ancla `#recarga` abre directamente el modo eléctrico.
+
+## Páginas, comparador y mapa de recarga (HITO 4)
+
+- `getStaticPaths()` genera 51 páginas de provincia y 867 de municipio con los slugs del dataset de
+  recarga (distintos de los de gasolineras). El umbral de municipio es `stationCount >= 3`,
+  `maxPowerKw !== null` y centroide finito; no se crean páginas indexables con datos insuficientes.
+- `src/lib/charging-pages.ts` centraliza los descriptores compartidos entre las rutas y
+  `sitemap.xml`, igual que `src/lib/pages.ts` hace para carburantes. Las URLs nuevas se añaden al
+  sitemap con la fecha más reciente entre ambas fuentes.
+- `src/lib/charging.ts` contiene la lógica pura: tramos de potencia (lenta `< 22`, rápida
+  `22–<150`, ultrarrápida `>=150` kW), filtros por tramo, potencia mínima, conector, operador,
+  radio y estado, y ordenación por distancia o potencia con desempate estable. Etiquetas de conector
+  son convenciones de nombre; el tipo original se conserva siempre en los datos.
+- El filtro de estado solo se ofrece si hay algún `status` conocido con `updatedAt` dentro de 365
+  días respecto a `cargadores.sourceUpdatedAt`. En el dataset real 12.114 de 12.150 estaciones son
+  `unknown`, así que la interfaz indica explícitamente que no se muestra disponibilidad; nunca se afirma que un
+  registro esté operativo por defecto.
+- `src/components/ChargingComparador.astro` y `src/scripts/charging-comparador.ts` filtran y ordenan
+  en cliente sobre el JSON de la página. Sin geolocalización se usa el centroide del ámbito y se
+  admite `?lat=&lon=`. Las preferencias `rf-charge` y `rf-sort` se guardan en `localStorage`.
+- `createChargingMap()` en `src/scripts/mapa.ts` comparte proveedor de teselas y carga diferida de
+  Leaflet con el mapa de carburantes. Usa `divIcon` con color por tramo, popups con potencia,
+  conectores, operador y estado solo cuando es reciente, y agrupación por rejilla con muchos puntos.
+- El JSON-LD usa `ElectricVehicleChargingStation` dentro de `ItemList`, sin horarios, disponibilidad
+  ni valoraciones inferidas; el texto de cada página se deriva de los índices reales.
 
 ## Validación y escritura atómica
 
@@ -179,8 +214,9 @@ descartes/duplicados, variación frente al dataset anterior y coherencia de los 
 Para recarga se añaden: registros mínimos, IDs únicos, coordenadas válidas, procedencia presente,
 conectores válidos, coherencia del fichero maestro/índice/estadísticas, proporción de filas
 malformadas acorde con el volumen, variación frente al dataset anterior y **ausencia de credenciales
-en URLs de metadatos**. Los errores críticos detienen la publicación; los avisos se registran en
-`metadata.json`.
+en URLs de metadatos**. En el HITO 4 se comprueban además los índices geográficos (`stationCount`
+coherente con el maestro, centroides finitos dentro de rango y ausencia de `raw`). Los errores
+críticos detienen la publicación; los avisos se registran en `metadata.json`.
 
 La escritura ocurre en `src/.staging-data-*`; tras verificar que cada JSON es parseable y no está
 vacío se renombra el directorio anterior a `.backup-data-*`, se coloca el nuevo y se elimina el
@@ -193,9 +229,10 @@ parciales en `src/data`.
   nombre + ID para garantizar unicidad. El ID es el oficial de MINETUR para gasolineras.
 - `sitemap.xml` y `robots.txt` son endpoints de Astro que reutilizan los descriptores de páginas y
   la fecha de actualización de la fuente. Canonical y Open Graph se generan en `BaseLayout.astro`.
-- JSON-LD: `BreadcrumbList` en cada página jerárquica y `GasStation` dentro de `ItemList` para el
-  ranking. Solo se publican campos presentes en el dataset: nunca horarios inferidos, valoraciones,
-  disponibilidad ni precios inventados.
+- JSON-LD: `BreadcrumbList` en cada página jerárquica, `GasStation` para el ranking de carburantes y
+  `ElectricVehicleChargingStation` para el de recarga, ambos dentro de `ItemList`. Solo se publican
+  campos presentes en el dataset: nunca horarios inferidos, valoraciones, disponibilidad ni precios
+  inventados.
 - El texto de cada página se calcula desde `estadisticas/`: mínimo y media de G95, media de gasóleo
   A, diferencia con la media nacional/provincial y recuento de estaciones. No se publican páginas de
   municipios sin datos suficientes.
@@ -204,10 +241,12 @@ parciales en `src/data`.
 
 ## Estado actual y límites
 
-- `npm test`: 59 pruebas (13 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
-  `npm run build`: 1.133 rutas (portada, 52 provincias, 1.080 municipios, sitemap y robots).
+- `npm test`: 67 pruebas (20 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
+  `npm run build`: 2.051 rutas (portada, 52 provincias y 1.080 municipios de carburantes, 51
+  provincias y 867 municipios de recarga, sitemap y robots).
 - Ingesta real de referencia: 11.548 gasolineras, 52 provincias, 3.263 municipios, 12.150
   estaciones de recarga y 36.052 puntos; 4 descartes, 0 duplicados y 0 filas RIPREE malformadas.
+  Se publican 51 índices de provincia y 2.122 de municipio de recarga, todos coherentes y sin `raw`.
 - OCM sigue en `status: "skipped"` porque no se dispone de `OCM_API_KEY`. No se han validado sus
   respuestas reales; la integración queda preparada pero sin datos de esa fuente.
 - Los precios no son tiempo real: son los declarados en la última publicación oficial. La web muestra
