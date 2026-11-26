@@ -2,8 +2,8 @@
 
 Plataforma estática para comparar precios de carburantes y puntos de recarga eléctrica en España.
 El proyecto sigue un desarrollo por hitos: **están implementados el HITO 1 (proyecto base y
-carburantes) y el HITO 2 (ingesta de recarga)**. El comparador, los mapas y el planificador
-pertenecen a hitos posteriores.
+carburantes), el HITO 2 (ingesta de recarga) y el HITO 3 (comparador de carburantes)**. El comparador
+eléctrico y el planificador de rutas pertenecen a hitos posteriores.
 
 ## Requisitos
 
@@ -18,7 +18,8 @@ npm install
 npm test          # pruebas unitarias (sin red)
 npm run check     # comprobación de tipos de Astro/TypeScript
 npm run ingest    # descarga real, normalización, validación y escritura atómica
-npm run build     # genera el sitio estático en dist/
+npm run dev       # servidor de desarrollo (prepara public/data antes de arrancar)
+npm run build     # prepara public/data y genera el sitio estático en dist/
 ```
 
 Opciones de ingesta (útiles para reproducir o depurar sin depender de la red):
@@ -40,6 +41,11 @@ npx tsx scripts/fetch-data.ts --data-dir ruta/a/salida --dry-run
 La URL de MINETUR se puede sobrescribir con `--url <url>`. Si falla una fuente obligatoria o la
 validación crítica, el pipeline se detiene y **no modifica** los datos anteriores.
 
+`npm run dev` y `npm run build` ejecutan `scripts/prepare-web-data.ts` mediante los hooks `predev` y
+`prebuild`: copian a `public/data/` una versión ligera de los índices por provincia y municipio (sin
+`raw`) y el índice del buscador. Ese directorio es generado y está ignorado por Git; se reconstruye
+siempre desde `src/data`, que sigue siendo la fuente de verdad para el build.
+
 ## Configuración
 
 Copia las variables que necesites a `.env`:
@@ -49,8 +55,8 @@ SITE_URL=https://rutafuel.es
 OCM_API_KEY=          # opcional
 ```
 
-- `SITE_URL` se usa para canonical URLs y futuros sitemaps. Sustituye el dominio de ejemplo por el
-  dominio real antes de publicar.
+- `SITE_URL` se usa para canonical URLs, `sitemap.xml` y `robots.txt`. Sustituye el dominio de
+  ejemplo por el dominio real antes de publicar.
 - `OCM_API_KEY` se usa **solo en la ingesta** y se envía como cabecera `X-API-Key` a Open Charge Map.
   Nunca se escribe en el repositorio, en la URL ni en los JSON públicos. Sin clave, la fuente se omite
   de forma segura y `metadata.json` lo indica con `status: "skipped"`. Con clave configurada, un fallo
@@ -97,6 +103,8 @@ src/data/
 │   ├── municipios.json
 │   ├── resumen.json
 │   └── cargadores.json                 # totales, potencias, conectores y calidad
+├── buscador/
+│   └── municipios.json                 # nombre, provincia, slug, CPs y centroide derivado
 ├── gasolineras/
 │   ├── estaciones.json
 │   ├── indice.json
@@ -109,6 +117,28 @@ src/data/
 
 `metadata.sources` mantiene MINETUR en primer lugar por compatibilidad con la portada actual.
 
+## Comparador de carburantes (HITO 3)
+
+- **Portada (`/`)**: buscador por nombre de localidad o código postal, botón de geolocalización,
+  enlaces a la localidad más barata, resumen de precios y estado de actualización. El tipo de energía
+  y el combustible se guardan en `localStorage` (`rf-mode`, `rf-fuel`, `rf-charge`).
+- **Páginas geográficas**: 52 provincias y 1.080 municipios. Solo se generan municipios con al menos
+  3 estaciones y 2 precios publicados de gasolina 95, para evitar páginas indexables vacías. El HTML
+  incluye ranking, estadísticas, texto original, enlaces internos, breadcrumbs y JSON-LD
+  (`BreadcrumbList` + `GasStation`). El cliente solo ordena/filtra y dibuja el mapa.
+- **Comparador**: carga únicamente el JSON de la provincia o municipio visitado desde `public/data`.
+  Ordena por precio, distancia (Haversine) o precio dentro de un radio (5/10/25/50 km). La escala de
+  colores verde/ámbar/rojo se calcula con cuartiles sobre las estaciones visibles. La preferencia de
+  orden se guarda en `rf-sort`. Sin geolocalización se usa el centroide del municipio, que puede
+  sustituirse por `?lat=<lat>&lon=<lon>`.
+- **Mapa**: Leaflet y su CSS se importan dinámicamente al pulsar «Ver en el mapa». Marcadores
+  `divIcon` con precio, agrupación por rejilla cuando hay muchos puntos y proveedor de teselas
+  configurable en `TILE_PROVIDERS` (`osm` por defecto). Enlaces externos a Google Maps y Waze.
+- **SEO técnico**: `sitemap.xml`, `robots.txt`, canonical, Open Graph, metadatos por página y datos
+  estructurados. Modo claro/oscuro y huecos `data-ad-slot` con altura reservada.
+- **Modo eléctrico informativo**: la portada muestra el número real de puntos de recarga y permite
+  guardar el tipo de recarga, pero el comparador eléctrico y sus filtros pertenecen al HITO 4.
+
 ## Arquitectura
 
 La información detallada de decisiones, modelos y umbrales de validación está en
@@ -120,10 +150,16 @@ La información detallada de decisiones, modelos y umbrales de validación está
       estadísticas, pruebas y build estático.
 - [x] HITO 2 — RIPREE + Open Charge Map, deduplicación con procedencia, JSON versionado, pruebas
       e ingesta validada. La llave de OCM es opcional; sin ella la fuente se omite.
-- [ ] HITO 3 — Comparador de carburantes (buscador, geolocalización, mapas y páginas SEO).
-- [ ] HITO 4 — Comparador eléctrico.
-- [ ] HITO 5 — Planificador de rutas.
+- [x] HITO 3 — Comparador de carburantes: portada, buscador, geolocalización, páginas SEO de
+      provincias/municipios, ranking, filtros en cliente y mapa diferido. 59 pruebas, `check` y
+      `build` correctos (1.133 rutas).
+- [ ] HITO 4 — Comparador eléctrico (páginas, mapa, potencia, conectores y SEO).
+- [ ] HITO 5 — Planificador de rutas (geocodificación, OSRM y estaciones sobre la geometría).
 - [ ] HITO 6 — Optimización, GitHub Actions y despliegue en Plesk.
+
+Pendiente para el HITO 3: verificación de Open Charge Map con una `OCM_API_KEY` real (sin clave la
+fuente queda registrada como `skipped`). El planificador y el comparador eléctrico siguen fuera de
+alcance de este hito.
 
 ## Aviso
 

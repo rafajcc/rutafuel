@@ -21,6 +21,7 @@ import {
   RIPREE_EXPORT_PAGE_URL,
   type RipreeFetched,
 } from './lib/ripree.js';
+import { buildSearchIndex } from './lib/search-index.js';
 import { buildStatistics } from './lib/statistics.js';
 import { readPreviousMetadata, writeDatasetAtomic } from './lib/storage.js';
 import { DATA_VERSION, FUEL_KEYS, SOURCE_IDS } from './lib/types.js';
@@ -312,6 +313,7 @@ async function main(): Promise<void> {
   files['estadisticas/provincias.json'] = statistics.provincias;
   files['estadisticas/municipios.json'] = statistics.municipios;
   files['estadisticas/resumen.json'] = statistics.resumen;
+  files['buscador/municipios.json'] = buildSearchIndex(indexes);
 
   const chargerIndex = buildChargerIndex(merged.stations);
   const chargerStats = buildChargerStatistics({
@@ -377,6 +379,7 @@ async function main(): Promise<void> {
     pretty: [
       'metadata.json',
       'gasolineras/indice.json',
+      'buscador/municipios.json',
       'cargadores/indice.json',
       'estadisticas/resumen.json',
       'estadisticas/cargadores.json',

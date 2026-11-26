@@ -1,19 +1,22 @@
 # Decisiones de arquitectura
 
-## Alcance actual (HITO 2)
+## Alcance actual (HITO 3)
 
 Sitio estático generado con Astro, sin backend. El navegador no necesita Node.js para funcionar; la
-ingesta se ejecuta en Node.js y produce JSON versionado que se publica junto al sitio. El HITO 2
-añade la ingesta de puntos de recarga (RIPREE y Open Charge Map) y su deduplicación. Los mapas y el
-planificador siguen pendientes de los HITOS 3 y 5.
+ingesta se ejecuta en Node.js y produce JSON versionado que se publica junto al sitio. El HITO 3 añade
+la interfaz de carburantes: portada con buscador y geolocalización, páginas SEO de provincias y
+municipios, comparador en cliente y mapa Leaflet cargado bajo demanda. El comparador eléctrico
+(HITO 4) y el planificador (HITO 5) siguen pendientes.
 
 ## Stack y versiones
 
 - Astro 7 (SSG), TypeScript estricto y Tailwind 4 (plugin de Vite).
 - `tsx` para ejecutar scripts TypeScript sin configuración adicional.
 - Pruebas con `node:test` (incluido en Node.js), sin dependencias de test adicionales.
-- Leaflet, RBush/Turf y proveedores de mapas/queries externas **no se instalan todavía**: pertenecen
-  a hitos posteriores.
+- Leaflet 1.9 y `@types/leaflet` son las únicas dependencias nuevas del HITO 3. `sitemap.xml` y
+  `robots.txt` son endpoints de Astro: no se añade ningún plugin de SEO.
+- RBush/Turf y proveedores externos de geocodificación/enrutado **no se instalan todavía**: pertenecen
+  al HITO 5.
 
 Astro 7 exige Node >= 22.23.4. Se fija esa versión en `.nvmrc` y se añade `node` como dependencia
 de desarrollo para que los scripts funcionen también en entornos con Node del sistema anterior.
@@ -129,6 +132,45 @@ El planificador de rutas (HITO 5) añadirá una rejilla espacial con celdas y un
 por geometría. La decisión entre RBush y Turf se tomará cuando se conozca el volumen y el patrón de
 consulta; no se añaden dependencias ahora.
 
+## Índice de búsqueda y copia web (HITO 3)
+
+- `scripts/lib/search-index.ts` deriva `buscador/municipios.json` de los índices oficiales: nombre,
+  provincia, slug, número de estaciones, códigos postales presentes y centroide aritmético de las
+  estaciones con coordenadas. El centroide es un dato calculado, no una ubicación oficial.
+- La validación `buscador-coherente` comprueba que el índice no está vacío y que toda entrada tiene
+  nombre, provincia y coordenadas finitas; la ingesta incluye el fichero en la escritura atómica.
+- `scripts/prepare-web-data.ts` (hooks `predev`/`prebuild`) copia `src/data` a `public/data` sin el
+  campo `raw` y solo para provincias y municipios con estaciones. El navegador descarga así el índice
+  de la página visitada (el de Barcelona tiene cientos de estaciones, no las 11.548 de España).
+  `public/data/` es generado y está ignorado por Git; `src/data` permanece como fuente de verdad.
+- La normalización de texto para búsquedas vive por duplicado en `scripts/lib/search-index.ts` y
+  `src/lib/search.ts`. Es intencionado: mantiene desacoplados el pipeline y el navegador con la misma
+  regla (NFD, sin diacríticos, minúsculas, caracteres no alfanuméricos → espacio).
+
+## Páginas, comparador y mapa (HITO 3)
+
+- `getStaticPaths()` genera 52 páginas de provincia y 1.080 de municipio. El umbral de municipio es
+  `stationCount >= 3` y `prices.g95.count >= 2`; evita páginas indexables con información insuficiente.
+  El HTML contiene ranking (top 10 por G95), estadísticas, comparación con la media provincial o
+  nacional, enlaces a localidades cercanas (Haversine sobre centroides), breadcrumbs y JSON-LD.
+- `src/lib/pages.ts` centraliza los umbrales y construye los descriptores usados tanto por las Rutas
+  como por `sitemap.xml`, de modo que no se anuncie una URL que no se genera.
+- `src/lib/read-data.ts` lee los índices desde `process.cwd()/src/data`: durante el prerenderizado
+  `import.meta.url` apunta a `dist/.prerender`, por lo que usarlo provocaría `ENOENT`.
+- El ranking es HTML estático (SEO y resiliencia sin JS). El JS de `src/scripts/comparador.ts` solo
+  ordena por precio, distancia o precio en radio, y colorea con cuartiles calculados sobre los
+  establecimientos visibles (`src/lib/colors.ts`). Sin permiso de geolocalización se usa el centro
+  calculado y se admite `?lat=&lon=` para fijar el origen. Preferencias en `localStorage`
+  (`rf-mode`, `rf-fuel`, `rf-charge`, `rf-sort`).
+- Leaflet y su CSS se importan dinámicamente al pulsar «Ver en el mapa» (`src/scripts/mapa.ts`). Los
+  marcadores son `divIcon` (sin imágenes externas), se agrupan en celdas de 0,02° con más de 120
+  estaciones y zoom bajo, y el proveedor de teselas se elige en `TILE_PROVIDERS` (solo `osm` por
+  ahora). Cambiar de proveedor no obliga a reescribir marcadores ni filtros. La atribución de
+  OpenStreetMap se muestra en el mapa.
+- La portada usa el mismo índice ligero para sugerir localidades y, con geolocalización, elegir la
+  más cercana. El modo eléctrico es informativo en este hito: muestra el recuento real de recarga y
+  guarda la preferencia, pero no ofrece comparador ni filtros; eso corresponde al HITO 4.
+
 ## Validación y escritura atómica
 
 Antes de publicar se comprueban: esquema de la respuesta, `ResultadoConsulta`, fecha, registros
@@ -147,13 +189,31 @@ parciales en `src/data`.
 
 ## SEO y contenido
 
-Las URLs definitivas serán `/gasolineras/[provincia]/` y `/gasolineras/[provincia]/[municipio]/`,
-con slugs basados en nombre e ID. El slug lleva el ID para garantizar unicidad aunque dos entidades
-compartan denominación. Solo se generarán páginas con datos suficientes; el contenido estático se
-calculará a partir de `estadisticas/` y no inventará horarios, disponibilidad ni valoraciones.
+- URLs limpias `/gasolineras/[provincia]/` y `/gasolineras/[provincia]/[municipio]/`, con slugs
+  nombre + ID para garantizar unicidad. El ID es el oficial de MINETUR para gasolineras.
+- `sitemap.xml` y `robots.txt` son endpoints de Astro que reutilizan los descriptores de páginas y
+  la fecha de actualización de la fuente. Canonical y Open Graph se generan en `BaseLayout.astro`.
+- JSON-LD: `BreadcrumbList` en cada página jerárquica y `GasStation` dentro de `ItemList` para el
+  ranking. Solo se publican campos presentes en el dataset: nunca horarios inferidos, valoraciones,
+  disponibilidad ni precios inventados.
+- El texto de cada página se calcula desde `estadisticas/`: mínimo y media de G95, media de gasóleo
+  A, diferencia con la media nacional/provincial y recuento de estaciones. No se publican páginas de
+  municipios sin datos suficientes.
+- La URL pública se configura con `SITE_URL` (valor por defecto de ejemplo en `astro.config.mjs`).
+  Antes de producción debe establecerse el dominio real para canonical y sitemap.
 
-La URL pública se configura con `SITE_URL` (valor por defecto de ejemplo en `astro.config.mjs`).
-Antes de producción debe establecerse el dominio real para canonical y sitemap.
+## Estado actual y límites
+
+- `npm test`: 59 pruebas (13 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
+  `npm run build`: 1.133 rutas (portada, 52 provincias, 1.080 municipios, sitemap y robots).
+- Ingesta real de referencia: 11.548 gasolineras, 52 provincias, 3.263 municipios, 12.150
+  estaciones de recarga y 36.052 puntos; 4 descartes, 0 duplicados y 0 filas RIPREE malformadas.
+- OCM sigue en `status: "skipped"` porque no se dispone de `OCM_API_KEY`. No se han validado sus
+  respuestas reales; la integración queda preparada pero sin datos de esa fuente.
+- Los precios no son tiempo real: son los declarados en la última publicación oficial. La web muestra
+  la fecha de actualización de la fuente y una advertencia explícita.
+- Modo claro/oscuro y huecos `data-ad-slot` con altura fija preparan la monetización futura sin
+  introducir anuncios ni afiliados en el MVP.
 
 ## Despliegue
 

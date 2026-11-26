@@ -1,0 +1,133 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Comparador from '../../../components/Comparador.astro';
+import StationTable from '../../../components/StationTable.astro';
+import { formatPrice } from '../../../lib/fuels.js';
+import { municipalityPages, provincePages, resumen } from '../../../lib/page-data.js';
+import type { ProvincePageDescriptor } from '../../../lib/pages.js';
+import { readProvinceIndex } from '../../../lib/read-data.js';
+import { breadcrumbSchema, gasStationListSchema } from '../../../lib/seo.js';
+
+interface Props {
+  page: ProvincePageDescriptor;
+}
+
+export function getStaticPaths() {
+  return provincePages.map((page) => ({
+    params: { provincia: page.slug },
+    props: { page },
+  }));
+}
+
+const { page } = Astro.props;
+const index = await readProvinceIndex(page.id);
+const ranked = index.stations
+  .filter((station) => station.prices.g95 !== null)
+  .sort((a, b) => a.prices.g95! - b.prices.g95!)
+  .slice(0, 10);
+
+const withCoordinates = index.stations.filter(
+  (station) => Number.isFinite(station.lat) && Number.isFinite(station.lon),
+);
+const center =
+  withCoordinates.length > 0
+    ? {
+        lat: withCoordinates.reduce((total, station) => total + station.lat, 0) / withCoordinates.length,
+        lon: withCoordinates.reduce((total, station) => total + station.lon, 0) / withCoordinates.length,
+      }
+    : { lat: 40.4168, lon: -3.7038 };
+
+const localMunicipalities = municipalityPages
+  .filter((item) => item.provinceId === page.id)
+  .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+
+const difference = page.prices.g95.avg !== null && resumen.prices.g95.avg !== null
+  ? page.prices.g95.avg - resumen.prices.g95.avg
+  : null;
+const siteUrl = Astro.site?.toString() ?? 'https://rutafuel.es/';
+
+const structuredData = [
+  breadcrumbSchema(
+    [{ name: 'Inicio', url: '/' }, { name: 'Gasolineras' }, { name: page.name }],
+    siteUrl,
+  ),
+  gasStationListSchema(ranked, siteUrl, 'g95', 'Gasolina 95 E5'),
+];
+---
+
+<BaseLayout
+  title={`Gasolineras y precios en ${page.name} · RutaFuel`}
+  description={`Compara los precios de gasolina y gasóleo en ${page.name}. ${page.stationCount} estaciones con precios mínimos de ${formatPrice(page.prices.g95.min)} €/l para la gasolina 95.`}
+  breadcrumbs={[
+    { name: 'Inicio', url: '/' },
+    { name: 'Gasolineras', url: '/#provincias' },
+    { name: page.name },
+  ]}
+  structuredData={structuredData}
+>
+  <section class="rounded-2xl bg-white p-6 shadow-sm dark:bg-slate-900">
+    <h1 class="text-3xl font-bold tracking-tight">Gasolineras en {page.name}</h1>
+    <p class="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">
+      En {page.name} hay {page.stationCount.toLocaleString('es-ES')} estaciones de servicio con precios
+      oficiales. La gasolina 95 E5 más barata se publica a {formatPrice(page.prices.g95.min)} €/l y el
+      precio medio es de {formatPrice(page.prices.g95.avg)} €/l
+      {
+        difference !== null
+          ? `, ${difference >= 0 ? 'por encima' : 'por debajo'} de la media nacional (${formatPrice(Math.abs(difference))} €/l).`
+          : '.'
+      }
+      Puedes ordenar las estaciones por precio o distancia y verlas en el mapa.
+    </p>
+    <dl class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Estaciones</dt>
+        <dd class="text-xl font-bold">{index.stationCount}</dd>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">G95 mínima</dt>
+        <dd class="text-xl font-bold">{formatPrice(page.prices.g95.min)} €/l</dd>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">G95 media</dt>
+        <dd class="text-xl font-bold">{formatPrice(page.prices.g95.avg)} €/l</dd>
+      </div>
+      <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-950">
+        <dt class="text-xs uppercase text-slate-500">Gasóleo A medio</dt>
+        <dd class="text-xl font-bold">{formatPrice(page.prices.goa.avg)} €/l</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section aria-labelledby="ranking" class="mt-8">
+    <h2 id="ranking" class="text-xl font-semibold">Estaciones más baratas de {page.name}</h2>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Ranking por precio de gasolina 95 E5 sobre {page.prices.g95.count} estaciones con ese precio publicado.
+    </p>
+    <StationTable stations={ranked} fuel="g95" />
+  </section>
+
+  <div data-ad-slot="contenido" class="ad-slot mt-8" aria-hidden="true"></div>
+
+  <Comparador
+    source={`/data/gasolineras/provincias/${page.id}.json`}
+    center={center}
+    context={page.name}
+  />
+
+  <section aria-labelledby="municipios" class="mt-8">
+    <h2 id="municipios" class="text-xl font-semibold">Municipios de {page.name} con precios</h2>
+    <ul class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        localMunicipalities.map((item) => (
+          <li class="rounded-lg bg-white px-3 py-2 text-sm dark:bg-slate-900">
+            <a href={item.url}>{item.name}</a>
+            <span class="float-right text-slate-500">{item.stationCount} estaciones</span>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="mt-3 text-sm text-slate-500 dark:text-slate-400">
+      Datos actualizados de la fuente oficial el {resumen.sourceUpdatedAt?.slice(0, 10)}.
+    </p>
+  </section>
+</BaseLayout>

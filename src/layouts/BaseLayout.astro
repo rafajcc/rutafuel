@@ -1,13 +1,24 @@
 ---
 import '../styles/global.css';
 
+interface Breadcrumb {
+  name: string;
+  url?: string;
+}
+
 interface Props {
   title: string;
   description: string;
+  breadcrumbs?: Breadcrumb[];
+  structuredData?: unknown;
+  ogType?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, breadcrumbs = [], structuredData, ogType = 'website' } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+const jsonLd = structuredData
+  ? JSON.stringify(structuredData).replaceAll('<', '\\u003c')
+  : undefined;
 ---
 
 <!doctype html>
@@ -18,28 +29,73 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString(
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content="RutaFuel" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta name="twitter:card" content="summary" />
+    <script is:inline>
+      try {
+        const stored = localStorage.getItem('rf-theme');
+        const dark = stored
+          ? stored === 'dark'
+          : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (dark) document.documentElement.classList.add('dark');
+      } catch {}
+    </script>
+    {jsonLd && <script type="application/ld+json" is:inline set:html={jsonLd} />}
   </head>
   <body class="min-h-screen">
     <header class="border-b border-slate-200 dark:border-slate-800">
-      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
         <a href="/" class="text-lg font-bold no-underline">RutaFuel</a>
-        <span class="text-xs text-slate-500 dark:text-slate-400">Datos oficiales · España</span>
+        <div class="flex items-center gap-3">
+          <span class="hidden text-xs text-slate-500 sm:inline dark:text-slate-400">Datos oficiales · España</span>
+          <button
+            type="button"
+            data-theme-toggle
+            class="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300"
+            aria-label="Cambiar entre modo claro y oscuro"
+          >
+            Tema
+          </button>
+        </div>
       </div>
     </header>
+    <div class="mx-auto max-w-5xl px-4 pt-4">
+      <div data-ad-slot="cabecera" class="ad-slot hidden sm:block" aria-hidden="true"></div>
+    </div>
     <main class="mx-auto max-w-5xl px-4 py-6">
+      {
+        breadcrumbs.length > 0 && (
+          <nav aria-label="Ruta de navegación" class="mb-5 text-sm text-slate-500 dark:text-slate-400">
+            <ol class="flex flex-wrap items-center gap-1">
+              {breadcrumbs.map((crumb, index) => (
+                <li class="flex items-center gap-1">
+                  {index > 0 && <span aria-hidden="true">/</span>}
+                  {crumb.url ? (
+                    <a href={crumb.url}>{crumb.name}</a>
+                  ) : (
+                    <span aria-current="page">{crumb.name}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
       <slot />
     </main>
     <footer class="mx-auto max-w-5xl px-4 py-8 text-xs text-slate-500 dark:text-slate-400">
       <p>
         Precios facilitados por el Ministerio para la Transición Ecológica. Información orientativa;
-        el precio final puede variar en estación.
+        el precio final puede variar en estación. No mostramos disponibilidad en tiempo real.
       </p>
+      <p class="mt-2"><a href="/">Inicio</a> · <a href="/sitemap.xml">Mapa del sitio</a></p>
     </footer>
+    <script>
+      import '../scripts/theme';
+    </script>
   </body>
 </html>

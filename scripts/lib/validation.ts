@@ -136,6 +136,25 @@ export function validateDataset(input: DatasetValidationInput): ValidationResult
   );
   add('índices-coherentes', indexedCount === stations.length, `${indexedCount} estaciones indexadas`);
 
+  const searchIndex = input.files['buscador/municipios.json'];
+  if (searchIndex) {
+    const entries = Array.isArray(searchIndex) ? searchIndex : [];
+    const invalid = entries.filter(
+      (entry) =>
+        typeof entry !== 'object' ||
+        entry === null ||
+        !('name' in entry) ||
+        !('provinceSlug' in entry) ||
+        !Number.isFinite((entry as { lat?: number }).lat) ||
+        !Number.isFinite((entry as { lon?: number }).lon),
+    );
+    add(
+      'buscador-coherente',
+      entries.length > 0 && invalid.length === 0,
+      `${entries.length} entradas de búsqueda, ${invalid.length} inválidas`,
+    );
+  }
+
   const emptyFiles = Object.entries(input.files).filter(
     ([, value]) => typeof value === 'string' && value.trim().length === 0,
   );
