@@ -1,0 +1,233 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { FUEL_LABELS } from '../../lib/fuels.js';
+import { mineturSource, ripreeSource } from '../../lib/page-data.js';
+import { breadcrumbSchema } from '../../lib/seo.js';
+
+const siteUrl = Astro.site?.toString() ?? 'https://rutafuel.es/';
+const structuredData = breadcrumbSchema(
+  [
+    { name: 'Inicio', url: '/' },
+    { name: 'Planificador de ruta' },
+  ],
+  siteUrl,
+);
+const fuelDate = mineturSource?.sourceUpdatedAt?.slice(0, 10) ?? 'fecha no disponible';
+const chargingDate = ripreeSource?.sourceUpdatedAt?.slice(0, 10) ?? 'fecha no disponible';
+---
+
+<BaseLayout
+  title="Planificador de ruta · RutaFuel"
+  description="Calcula una ruta por carretera y encuentra gasolineras o puntos de recarga cercanos a la geometría real del recorrido, ordenados por kilómetro."
+  breadcrumbs={[{ name: 'Inicio', url: '/' }, { name: 'Planificador de ruta' }]}
+  structuredData={structuredData}
+>
+  <h1 class="text-2xl font-bold sm:text-3xl">Planificador de ruta</h1>
+  <p class="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">
+    Indica origen y destino para obtener la ruta por carretera y las estaciones cercanas a su trazado
+    real. Puedes buscar gasolineras por precio o cargadores por potencia, elegir el combustible y
+    limitar el desvío respecto a la ruta. Los resultados se ordenan por la posición en el recorrido.
+  </p>
+
+  <section
+    data-route-planner
+    class="mt-6 rounded-2xl bg-white p-5 shadow-sm sm:p-6 dark:bg-slate-900"
+    aria-labelledby="formulario-ruta"
+  >
+    <h2 id="formulario-ruta" class="text-xl font-semibold">Datos del viaje</h2>
+
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="ruta-origen" class="block text-sm font-medium">Origen</label>
+        <input
+          id="ruta-origen"
+          type="search"
+          list="ruta-localidades"
+          data-route-input="origin"
+          autocomplete="off"
+          placeholder="Madrid o 40.4168, -3.7038"
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
+        />
+        <div class="mt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            data-route-geocode="origin"
+            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-700"
+          >
+            Buscar dirección con Nominatim
+          </button>
+          <button
+            type="button"
+            data-route-locate
+            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-700"
+          >
+            Usar mi ubicación
+          </button>
+        </div>
+      </div>
+      <div>
+        <label for="ruta-destino" class="block text-sm font-medium">Destino</label>
+        <input
+          id="ruta-destino"
+          type="search"
+          list="ruta-localidades"
+          data-route-input="destination"
+          autocomplete="off"
+          placeholder="Barcelona"
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
+        />
+        <div class="mt-2">
+          <button
+            type="button"
+            data-route-geocode="destination"
+            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-700"
+          >
+            Buscar dirección con Nominatim
+          </button>
+        </div>
+      </div>
+    </div>
+    <datalist id="ruta-localidades" data-route-suggestions></datalist>
+
+    <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <label for="ruta-energia" class="block text-sm font-medium">Tipo de energía</label>
+        <select
+          id="ruta-energia"
+          data-route-energy
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
+        >
+          <option value="fuel">Carburantes</option>
+          <option value="electric">Recarga eléctrica</option>
+        </select>
+      </div>
+      <div data-route-fuel-field>
+        <label for="ruta-combustible" class="block text-sm font-medium">Combustible</label>
+        <select
+          id="ruta-combustible"
+          data-route-fuel
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
+        >
+          {
+            Object.entries(FUEL_LABELS).map(([key, label]) => (
+              <option value={key}>{label}</option>
+            ))
+          }
+        </select>
+      </div>
+      <div data-route-charging-field hidden>
+        <label for="ruta-potencia" class="block text-sm font-medium">Potencia mínima</label>
+        <select
+          id="ruta-potencia"
+          data-route-min-power
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
+        >
+          <option value="0">Cualquier potencia</option>
+          <option value="22">≥ 22 kW</option>
+          <option value="50">≥ 50 kW</option>
+          <option value="150">≥ 150 kW</option>
+        </select>
+      </div>
+      <div data-route-charging-field hidden>
+        <label for="ruta-tramo" class="block text-sm font-medium">Tramo de recarga</label>
+        <select
+          id="ruta-tramo"
+          data-route-tier
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
+        >
+          <option value="all">Todos</option>
+          <option value="slow">Lenta (&lt; 22 kW)</option>
+          <option value="fast">Rápida (22–150 kW)</option>
+          <option value="ultra">Ultrarrápida (≥ 150 kW)</option>
+        </select>
+      </div>
+      <div>
+        <label for="ruta-radio" class="block text-sm font-medium">Desvío máximo</label>
+        <select
+          id="ruta-radio"
+          data-route-radius
+          class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
+        >
+          <option value="2">2 km</option>
+          <option value="5" selected>5 km</option>
+          <option value="10">10 km</option>
+          <option value="20">20 km</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-5">
+      <button
+        type="button"
+        data-route-submit
+        class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
+      >
+        Calcular ruta
+      </button>
+    </div>
+    <p data-route-status role="status" class="mt-3 min-h-6 text-sm text-slate-600 dark:text-slate-300">
+    </p>
+  </section>
+
+  <section data-route-results hidden class="mt-8" aria-labelledby="resultados-ruta">
+    <h2 id="resultados-ruta" class="text-xl font-semibold">Estaciones en la ruta</h2>
+    <p data-route-summary class="mt-2 text-sm text-slate-600 dark:text-slate-300"></p>
+    <button
+      type="button"
+      data-route-map-toggle
+      aria-expanded="false"
+      class="mt-3 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
+    >
+      Ver en el mapa
+    </button>
+    <div
+      data-route-map
+      hidden
+      class="mt-3 h-80 w-full rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900"
+    ></div>
+    <div class="mt-4 overflow-x-auto">
+      <table class="w-full min-w-[42rem] text-left text-sm">
+        <thead class="text-xs uppercase text-slate-500 dark:text-slate-400">
+          <tr>
+            <th class="py-2 pr-3">Km de ruta</th>
+            <th class="py-2 pr-3">Estación</th>
+            <th class="py-2 pr-3">Distancia a ruta</th>
+            <th class="py-2 pr-3">Desvío estimado</th>
+            <th class="py-2 pr-3">Precio / potencia</th>
+            <th class="py-2">Enlaces</th>
+          </tr>
+        </thead>
+        <tbody data-route-results-body></tbody>
+      </table>
+    </div>
+    <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
+      La distancia a la ruta se calcula sobre la geometría devuelta por el proveedor de enrutado. El
+      desvío estimado es el doble de esa distancia (ida y vuelta), no un tiempo de conducción real.
+    </p>
+  </section>
+
+  <section class="mt-10 grid gap-4 text-sm text-slate-600 sm:grid-cols-2 dark:text-slate-300">
+    <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+      <h2 class="font-semibold text-slate-900 dark:text-slate-100">Límites de los datos</h2>
+      <p class="mt-2">
+        Precios de carburantes actualizados el {fuelDate}; instalaciones de recarga actualizadas el
+        {chargingDate}. No son precios ni disponibilidad en tiempo real. La potencia es la declarada
+        por la fuente y no garantiza que el punto esté operativo.
+      </p>
+    </div>
+    <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+      <h2 class="font-semibold text-slate-900 dark:text-slate-100">Proveedores</h2>
+      <p class="mt-2">
+        Geocodificación local con el propio dataset; búsqueda de direcciones opcional con
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer"
+          >© OpenStreetMap contributors</a
+        >, sin autocompletado y con caché. Rutas calculadas con OSRM; en producción se recomienda
+        usar una instancia propia. Cartografía © OpenStreetMap contributors.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import '../../scripts/ruta';
+</script>

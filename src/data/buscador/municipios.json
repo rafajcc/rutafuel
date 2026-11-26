@@ -4801,11 +4801,10 @@
     "provinceId": "01",
     "provinceName": "Araba / Álava",
     "provinceSlug": "araba-alava-01",
-    "stationCount": 2,
-    "lat": 42.909139,
-    "lon": -2.627944,
+    "stationCount": 1,
+    "lat": 42.876861,
+    "lon": -2.616361,
     "postalCodes": [
-      "01510",
       "01520"
     ]
   },
@@ -18023,20 +18022,6 @@
     "lon": 0.46525,
     "postalCodes": [
       "43515"
-    ]
-  },
-  {
-    "id": "5457",
-    "name": "Galindo y Perahuy",
-    "slug": "galindo-y-perahuy-5457",
-    "provinceId": "37",
-    "provinceName": "Salamanca",
-    "provinceSlug": "salamanca-37",
-    "stationCount": 1,
-    "lat": 40.931417,
-    "lon": -5.808361,
-    "postalCodes": [
-      "37449"
     ]
   },
   {

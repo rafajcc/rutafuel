@@ -26,6 +26,7 @@ import {
   RIPREE_EXPORT_PAGE_URL,
   type RipreeFetched,
 } from './lib/ripree.js';
+import { buildRouteIndex } from './lib/route-index.js';
 import { buildSearchIndex } from './lib/search-index.js';
 import { buildStatistics } from './lib/statistics.js';
 import { readPreviousMetadata, writeDatasetAtomic } from './lib/storage.js';
@@ -339,6 +340,14 @@ async function main(): Promise<void> {
     files[chargerMunicipalityIndexPath(index.provinceId, index.id)] = index;
   }
 
+  const routeIndex = buildRouteIndex(
+    normalized.stations,
+    merged.stations,
+    generatedAt,
+    { fuel: response.sourceDate.iso, charging: ripreeUpdatedAt },
+  );
+  files['rutas/estaciones.json'] = routeIndex;
+
   const sources = [mineturSource, ripreeSource, ocmSource];
   const metadata: DatasetMetadata = {
     dataVersion: DATA_VERSION,
@@ -363,6 +372,11 @@ async function main(): Promise<void> {
       stats: chargerStats,
       malformedRipreeRows: ripreeNormalized.malformedRows,
       duplicatesRemoved: merged.merged,
+    },
+    route: {
+      index: routeIndex,
+      fuelCount: normalized.stations.length,
+      chargingCount: merged.stations.length,
     },
   });
   metadata.validation = validation;

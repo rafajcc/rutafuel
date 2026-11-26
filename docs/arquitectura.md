@@ -1,23 +1,24 @@
 # Decisiones de arquitectura
 
-## Alcance actual (HITO 4)
+## Alcance actual (HITO 5)
 
 Sitio estático generado con Astro, sin backend. El navegador no necesita Node.js para funcionar; la
 ingesta se ejecuta en Node.js y produce JSON versionado que se publica junto al sitio. El HITO 3 añadió
-la interfaz de carburantes y el HITO 4 añade la de recarga: portada con buscador eléctrico, páginas SEO
-de provincias y municipios, comparador en cliente y mapa Leaflet cargado bajo demanda. El planificador
-(HITO 5) y la automatización (HITO 6) siguen pendientes.
+la interfaz de carburantes, el HITO 4 la de recarga y el HITO 5 el planificador de rutas: portada con
+ambos buscadores, páginas SEO, comparadores en cliente, mapa Leaflet bajo demanda y `/ruta/` con
+geocodificación, enrutado y estaciones sobre la geometría real. La automatización (HITO 6) sigue
+pendiente.
 
 ## Stack y versiones
 
 - Astro 7 (SSG), TypeScript estricto y Tailwind 4 (plugin de Vite).
 - `tsx` para ejecutar scripts TypeScript sin configuración adicional.
 - Pruebas con `node:test` (incluido en Node.js), sin dependencias de test adicionales.
-- Leaflet 1.9 y `@types/leaflet` son las únicas dependencias nuevas del HITO 3; el HITO 4 las reutiliza
-  sin añadir paquetes. `sitemap.xml` y `robots.txt` son endpoints de Astro: no se añade ningún plugin
-  de SEO.
-- RBush/Turf y proveedores externos de geocodificación/enrutado **no se instalan todavía**: pertenecen
-  al HITO 5.
+- Leaflet 1.9 y `@types/leaflet` son las únicas dependencias nuevas del HITO 3; los hitos 4 y 5 las
+  reutilizan sin añadir paquetes. `sitemap.xml` y `robots.txt` son endpoints de Astro: no se añade
+  ningún plugin de SEO.
+- RBush/Turf y proveedores de geocodificación/enrutado **no se instalan**: se decodifica la polyline y
+  se consulta una rejilla propia con código sin dependencias (ver «Planificador de rutas»).
 
 Astro 7 exige Node >= 22.23.4. Se fija esa versión en `.nvmrc` y se añade `node` como dependencia
 de desarrollo para que los scripts funcionen también en entornos con Node del sistema anterior.
@@ -136,10 +137,6 @@ En el HITO 4 se añaden `cargadores/provincias/<id>.json` y
 y procedencia resumida (`source` + `id` + fecha), pero nunca `raw` ni URLs con credenciales. El
 centroide es aritmético sobre las estaciones reales, no una ubicación oficial.
 
-El planificador de rutas (HITO 5) añadirá una rejilla espacial con celdas y una interfaz de búsqueda
-por geometría. La decisión entre RBush y Turf se tomará cuando se conozca el volumen y el patrón de
-consulta; no se añaden dependencias ahora.
-
 ## Índice de búsqueda y copia web (HITO 3)
 
 - `scripts/lib/search-index.ts` deriva `buscador/municipios.json` de los índices oficiales: nombre,
@@ -149,7 +146,7 @@ consulta; no se añaden dependencias ahora.
   nombre, provincia y coordenadas finitas; la ingesta incluye el fichero en la escritura atómica.
 - `scripts/prepare-web-data.ts` (hooks `predev`/`prebuild`) copia `src/data` a `public/data` sin el
   campo `raw` y solo para provincias y municipios con estaciones. El navegador descarga así el índice
-  de la página visitada (el de Barcelona tiene cientos de estaciones, no las 11.548 de España).
+  de la página visitada (el de Barcelona tiene cientos de estaciones, no las 11.546 de España).
   `public/data/` es generado y está ignorado por Git; `src/data` permanece como fuente de verdad.
 - La normalización de texto para búsquedas vive por duplicado en `scripts/lib/search-index.ts` y
   `src/lib/search.ts`. Es intencionado: mantiene desacoplados el pipeline y el navegador con la misma
@@ -206,6 +203,43 @@ consulta; no se añaden dependencias ahora.
 - El JSON-LD usa `ElectricVehicleChargingStation` dentro de `ItemList`, sin horarios, disponibilidad
   ni valoraciones inferidas; el texto de cada página se deriva de los índices reales.
 
+## Planificador de rutas (HITO 5)
+
+- **Rejilla en lugar de RBush/Turf**: `scripts/lib/route-index.ts` genera `rutas/estaciones.json`, una
+  rejilla de celdas de 0,25° (≈ 28 km en latitud). El navegador descarga un único fichero bajo demanda
+  y `cellIdsWithin()` explora solo las celdas del corredor (radio máximo 20 km). Con 11.546
+  gasolineras y 12.150 cargadores el fichero ocupa ~5 MB; un índice espacial con librería o un fichero
+  por estación añadiría dependencias y peticiones sin beneficio para este patrón de consulta.
+- **Registros mínimos**: cada entrada guarda `id`, coordenadas, nombre, municipio, provincia y solo
+  los campos que la búsqueda necesita (precios publicados no nulos; potencia, conectores y operador en
+  recarga). No incluye `raw`, `sources` ni URLs de auditoría, que se mantienen en `src/data` para la
+  procedencia completa. Las coordenadas inválidas se omiten y los conectores se deduplican.
+- **Geocodificación desacoplada**: `GeocodingService.geocode(query)` es el contrato. Por defecto se
+  usa `createLocalGeocoder()` sobre `buscador/municipios.json` (sin red) y se admiten coordenadas
+  literales «lat, lon». `createNominatimGeocoder()` solo se invoca al pulsar explícitamente
+  «Buscar dirección con Nominatim»: sin autocompletado, `limit=1`, `countrycodes=es`,
+  `accept-language=es`, caché en `localStorage` con TTL de 30 días e intervalo mínimo de 1100 ms
+  entre peticiones. Se muestra atribución a OpenStreetMap y el adaptador es sustituible.
+- **Enrutado desacoplado**: `RoutingService.calculateRoute(origin, destination)` es el contrato;
+  `createOsrmRoutingService()` acepta `baseUrl`, `profile` y `fetchImpl` inyectables. Se pide
+  `overview=full&geometries=polyline&steps=false` y `decodePolyline()` interpreta la polyline de
+  precisión 5 sin dependencias. Los fallos se normalizan como `RouteError`. El servidor público de
+  OSRM es de demostración: en producción debe configurarse una instancia propia mediante `baseUrl`.
+- **Lógica sobre la geometría real** (`src/lib/route.ts`, funciones puras): `sampleRoute()` muestrea la
+  polilinea cada 1 km acumulando distancia desde el origen, `nearestOnRoute()` proyecta cada estación
+  sobre el trazado y `stationsAlongRoute()` aplica filtros de combustible o tramo de potencia, potencia
+  mínima y radio, y ordena por `alongRouteKm` (no por línea recta origen-destino). `detourKm = 2 *
+  distanceKm` es una estimación de ida y vuelta, no un cálculo de conducción.
+- **Interfaz**: `src/pages/ruta/index.astro` genera `/ruta/` estático para SEO con el formulario, los
+  límites y las atribuciones; `src/scripts/ruta.ts` resuelve origen y destino, calcula la ruta, carga
+  la rejilla, filtra y renderiza la tabla (kilómetro de ruta, distancia al trazado, desvío, precio o
+  potencia y enlaces a Google Maps/Waze). `createRouteMap()` reutiliza la carga diferida de Leaflet y
+  dibuja la polilinea con las estaciones. Preferencias en `localStorage` (`rf-route-*`). La página está
+  enlazada desde la portada y añadida a `sitemap.xml`.
+- **Límites explícitos**: no se muestra disponibilidad ni precio en tiempo real; el radio se limita a
+  20 km para no consultar media España; Nominatim y OSRM se prueban solo con `fetchImpl` falso en los
+  tests, y sus endpoints públicos son de uso limitado, no aptos para producción.
+
 ## Validación y escritura atómica
 
 Antes de publicar se comprueban: esquema de la respuesta, `ResultadoConsulta`, fecha, registros
@@ -215,8 +249,11 @@ Para recarga se añaden: registros mínimos, IDs únicos, coordenadas válidas, 
 conectores válidos, coherencia del fichero maestro/índice/estadísticas, proporción de filas
 malformadas acorde con el volumen, variación frente al dataset anterior y **ausencia de credenciales
 en URLs de metadatos**. En el HITO 4 se comprueban además los índices geográficos (`stationCount`
-coherente con el maestro, centroides finitos dentro de rango y ausencia de `raw`). Los errores
-críticos detienen la publicación; los avisos se registran en `metadata.json`.
+coherente con el maestro, centroides finitos dentro de rango y ausencia de `raw`). En el HITO 5 se
+añaden `rutas-indice-generado` (fichero publicado y número de celdas), `rutas-indice-coherente`
+(totales de gasolineras y cargadores iguales a los del dataset) y `rutas-celdas-válidas` (claves y
+registros con coordenadas finitas y campos admitidos). Los errores críticos detienen la publicación;
+los avisos se registran en `metadata.json`.
 
 La escritura ocurre en `src/.staging-data-*`; tras verificar que cada JSON es parseable y no está
 vacío se renombra el directorio anterior a `.backup-data-*`, se coloca el nuevo y se elimina el
@@ -241,14 +278,18 @@ parciales en `src/data`.
 
 ## Estado actual y límites
 
-- `npm test`: 67 pruebas (20 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
-  `npm run build`: 2.051 rutas (portada, 52 provincias y 1.080 municipios de carburantes, 51
-  provincias y 867 municipios de recarga, sitemap y robots).
-- Ingesta real de referencia: 11.548 gasolineras, 52 provincias, 3.263 municipios, 12.150
-  estaciones de recarga y 36.052 puntos; 4 descartes, 0 duplicados y 0 filas RIPREE malformadas.
-  Se publican 51 índices de provincia y 2.122 de municipio de recarga, todos coherentes y sin `raw`.
+- `npm test`: 78 pruebas (21 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
+  `npm run build`: 2.052 rutas (portada, `/ruta/`, 52 provincias y 1.080 municipios de carburantes,
+  51 provincias y 867 municipios de recarga, sitemap y robots). Smoke test sobre `dist/`: 17/17
+  comprobaciones correctas.
+- Ingesta real de referencia (26/11/2026): 11.546 gasolineras, 52 provincias, 3.262 municipios,
+  12.150 estaciones de recarga y 36.052 puntos; 4 descartes, 0 duplicados y 0 filas RIPREE
+  malformadas. La rejilla de rutas contiene 927 celdas (~5 MB) con las tres comprobaciones `rutas-*`
+  correctas. Se publican 51 índices de provincia y 2.122 de municipio de recarga, coherentes y sin `raw`.
 - OCM sigue en `status: "skipped"` porque no se dispone de `OCM_API_KEY`. No se han validado sus
   respuestas reales; la integración queda preparada pero sin datos de esa fuente.
+- Los adaptadores de Nominatim y OSRM se han probado solo con respuestas simuladas. Falta probarlos
+  contra endpoints reales y decidir el proveedor de producción antes de publicar `/ruta/`.
 - Los precios no son tiempo real: son los declarados en la última publicación oficial. La web muestra
   la fecha de actualización de la fuente y una advertencia explícita.
 - Modo claro/oscuro y huecos `data-ad-slot` con altura fija preparan la monetización futura sin

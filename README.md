@@ -2,9 +2,9 @@
 
 Plataforma estática para comparar precios de carburantes y puntos de recarga eléctrica en España.
 El proyecto sigue un desarrollo por hitos: **están implementados el HITO 1 (proyecto base y
-carburantes), el HITO 2 (ingesta de recarga), el HITO 3 (comparador de carburantes) y el HITO 4
-(comparador eléctrico)**. El planificador de rutas y la automatización de despliegue pertenecen a
-hitos posteriores.
+carburantes), el HITO 2 (ingesta de recarga), el HITO 3 (comparador de carburantes), el HITO 4
+(comparador eléctrico) y el HITO 5 (planificador de rutas)**. La automatización de despliegue
+pertenece al HITO 6.
 
 ## Requisitos
 
@@ -44,7 +44,8 @@ validación crítica, el pipeline se detiene y **no modifica** los datos anterio
 
 `npm run dev` y `npm run build` ejecutan `scripts/prepare-web-data.ts` mediante los hooks `predev` y
 `prebuild`: copian a `public/data/` una versión ligera de los índices por provincia y municipio (sin
-`raw`) de carburantes y recarga, el buscador de localidades y `cargadores/buscador.json`. Ese directorio
+`raw`) de carburantes y recarga, el buscador de localidades, `cargadores/buscador.json` y la rejilla
+espacial `rutas/estaciones.json`. Ese directorio
 es generado y está ignorado por Git; se reconstruye siempre desde `src/data`, que sigue siendo la
 fuente de verdad para el build.
 
@@ -112,11 +113,13 @@ src/data/
 │   ├── indice.json
 │   ├── provincias/<id>.json
 │   └── municipios/<idProv>/<idMun>.json
-└── cargadores/
-    ├── estaciones.json                 # dataset completo de recarga (con `raw` y `sources`)
-    ├── indice.json                     # provincias y municipios con recuentos, potencia y centroide
-    ├── provincias/<id>.json            # estaciones ligeras de esa provincia
-    └── municipios/<idProv>/<idMun>.json
+├── cargadores/
+│   ├── estaciones.json                 # dataset completo de recarga (con `raw` y `sources`)
+│   ├── indice.json                     # provincias y municipios con recuentos, potencia y centroide
+│   ├── provincias/<id>.json            # estaciones ligeras de esa provincia
+│   └── municipios/<idProv>/<idMun>.json
+└── rutas/
+    └── estaciones.json                 # rejilla de 0,25° con registros mínimos para el planificador
 ```
 
 `metadata.sources` mantiene MINETUR en primer lugar por compatibilidad con la portada actual.
@@ -161,6 +164,29 @@ src/data/
 - **Datos publicados**: los índices llevan procedencia resumida (sin URLs sensibles), conectores,
   potencia y `updatedAt`, pero nunca `raw`. La ingesta valida su coherencia antes de escribir.
 
+## Planificador de rutas (HITO 5)
+
+- **Página (`/ruta/`)**: origen y destino, tipo de energía, combustible o tramo/potencia mínima de
+  recarga y radio máximo de desviación (2/5/10/20 km). Enlazada desde la portada y `sitemap.xml`.
+  Las preferencias se guardan en `localStorage` (`rf-route-*`).
+- **Geocodificación**: por defecto se usa el buscador local `buscador/municipios.json`, sin peticiones
+  externas; también se admiten coordenadas «lat, lon». Nominatim solo se consulta al pulsar
+  «Buscar dirección con Nominatim»: sin autocompletado, `limit=1`, `countrycodes=es`, caché de 30 días
+  en `localStorage` e intervalo mínimo de 1100 ms entre peticiones. Se muestra atribución a
+  OpenStreetMap. La interfaz `GeocodingService` permite cambiar de proveedor.
+- **Enrutado**: `RoutingService` con adaptador OSRM inyectable (`baseUrl` y `profile`). Se pide
+  `overview=full&geometries=polyline&steps=false`; la polyline se decodifica sin dependencias.
+  El servidor público de OSRM es solo de demostración: en producción debe configurarse una instancia
+  propia mediante `createOsrmRoutingService({ baseUrl })`.
+- **Estaciones en ruta**: la ingesta genera `rutas/estaciones.json`, una rejilla de celdas de 0,25°
+  con 11.546 gasolineras y 12.150 cargadores (927 celdas). El cliente descarga ese único fichero bajo
+  demanda y explora solo las celdas del corredor. La geometría se muestrea cada 1 km, se calcula la
+  distancia real a la polilinea y se ordena por kilómetro acumulado desde el origen. El desvío es una
+  estimación de ida y vuelta, no un cálculo de conducción.
+- **Resultados y mapa**: tabla con kilómetro de ruta, distancia al trazado, desvío estimado, precio o
+  potencia y enlaces a Google Maps/Waze. Leaflet se carga dinámicamente al pulsar «Ver en el mapa» y
+  dibuja la polilinea junto a las estaciones. No se muestra disponibilidad ni precio en tiempo real.
+
 ## Arquitectura
 
 La información detallada de decisiones, modelos y umbrales de validación está en
@@ -178,11 +204,14 @@ La información detallada de decisiones, modelos y umbrales de validación está
 - [x] HITO 4 — Comparador eléctrico: páginas SEO, mapa de cargadores, filtros de potencia y
       conectores, listados y buscador eléctrico en portada. 67 pruebas, `check` y `build` correctos
       (2.051 rutas).
-- [ ] HITO 5 — Planificador de rutas (geocodificación, OSRM y estaciones sobre la geometría).
+- [x] HITO 5 — Planificador de rutas: geocodificación local/Nominatim, OSRM inyectable, rejilla
+      espacial y estaciones ordenadas sobre la geometría real. 78 pruebas, `check` y `build` correctos
+      (2.052 rutas).
 - [ ] HITO 6 — Optimización, GitHub Actions y despliegue en Plesk.
 
 Pendiente: verificación de Open Charge Map con una `OCM_API_KEY` real (sin clave la fuente queda
-registrada como `skipped`). El planificador sigue fuera de alcance de este hito.
+registrada como `skipped`) y prueba de los proveedores externos con endpoints reales; el demo público
+de OSRM y Nominatim solo se usa en uso limitado, no en producción.
 
 ## Aviso
 

@@ -1,4 +1,5 @@
 import { MAX_PRICE, MIN_PRICE, isValidCoordinate } from './gasolineras.js';
+import type { RouteGridIndex } from './route-index.js';
 import { FUEL_KEYS } from './types.js';
 import type {
   ChargerIndex,
@@ -18,6 +19,12 @@ export interface ChargerValidationInput {
   duplicatesRemoved: number;
 }
 
+export interface RouteValidationInput {
+  index: RouteGridIndex;
+  fuelCount: number;
+  chargingCount: number;
+}
+
 export interface DatasetValidationInput {
   stations: FuelStation[];
   normalized: NormalizeResult;
@@ -26,6 +33,7 @@ export interface DatasetValidationInput {
   generatedAt: string;
   dataVersion: number;
   chargers?: ChargerValidationInput;
+  route?: RouteValidationInput;
 }
 
 type Check = ValidationResult['checks'][number];
@@ -303,6 +311,52 @@ export function validateDataset(input: DatasetValidationInput): ValidationResult
         change > 0.1 && change <= 0.3 ? 'warning' : 'error',
       );
     }
+  }
+
+  if (input.route) {
+    const { index, fuelCount, chargingCount } = input.route;
+    const cells = Object.entries(index.cells);
+    const routeFile = input.files['rutas/estaciones.json'] as
+      | { cells?: Record<string, unknown> }
+      | undefined;
+    const entries = cells.flatMap(([, list]) => (Array.isArray(list) ? list : []));
+    const finiteNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value);
+    const invalidCells = cells.filter(
+      ([key, list]) => !/^-?\d+:-?\d+$/.test(key) || !Array.isArray(list),
+    );
+    const invalidEntries = entries.filter((entry) => {
+      const item = entry as unknown as Record<string, unknown>;
+      return (
+        (item.kind !== 'fuel' && item.kind !== 'charging') ||
+        !finiteNumber(item.lat) ||
+        !finiteNumber(item.lon) ||
+        'raw' in item ||
+        'sources' in item ||
+        'url' in item
+      );
+    });
+
+    add(
+      'rutas-indice-generado',
+      Boolean(routeFile && Object.keys(routeFile.cells ?? {}).length > 0),
+      `${cells.length} celdas en el índice de rutas`,
+    );
+    add(
+      'rutas-indice-coherente',
+      index.totals.fuel === fuelCount &&
+        index.totals.charging === chargingCount &&
+        index.totals.cells === cells.length &&
+        entries.length === fuelCount + chargingCount,
+      `${index.totals.fuel} gasolineras y ${index.totals.charging} cargadores en ${cells.length} celdas`,
+    );
+    add(
+      'rutas-celdas-válidas',
+      finiteNumber(index.cellSizeDeg) &&
+        index.cellSizeDeg > 0 &&
+        invalidCells.length === 0 &&
+        invalidEntries.length === 0,
+      `${invalidCells.length} celdas y ${invalidEntries.length} registros inválidos`,
+    );
   }
 
   const ok = checks.every((check) => check.ok || check.severity === 'warning');

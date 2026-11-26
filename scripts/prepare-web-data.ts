@@ -123,6 +123,10 @@ async function main(): Promise<void> {
   const chargingSearch = buildChargingSearch(chargerIndex);
   await writeJson('cargadores/buscador.json', chargingSearch);
 
+  // Rejilla del planificador: ya contiene registros ligeros, sin `raw` que ocultar.
+  const routeIndex = await readJson<unknown>('rutas/estaciones.json');
+  await writeJson('rutas/estaciones.json', routeIndex);
+
   console.log(
     `[rutafuel] Copia web preparada: ${fuelProvinces} provincias y ${fuelMunicipalities} municipios de carburantes; ` +
       `${chargeProvinces} provincias y ${chargeMunicipalities} municipios de recarga; ` +

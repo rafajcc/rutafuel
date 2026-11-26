@@ -261,3 +261,57 @@ export async function createChargingMap(
     },
   };
 }
+
+export interface RouteMapStation extends Coordinates {
+  id: string;
+  name?: string;
+  detail: string;
+}
+
+export interface RouteMapController {
+  destroy(): void;
+}
+
+/** Mapa del planificador: polilinea de la ruta y estaciones cercanas, con Leaflet diferido. */
+export async function createRouteMap(
+  container: HTMLElement,
+  geometry: Coordinates[],
+  stations: RouteMapStation[],
+  providerId: TileProviderId = 'osm',
+): Promise<RouteMapController> {
+  const L = await loadLeaflet();
+  const provider = TILE_PROVIDERS[providerId];
+  const center = geometry[0] ?? { lat: 40, lon: -3 };
+  const map = L.map(container, { scrollWheelZoom: false }).setView([center.lat, center.lon], 7);
+  L.tileLayer(provider.url, {
+    attribution: provider.attribution,
+    maxZoom: provider.maxZoom,
+  }).addTo(map);
+
+  const line: [number, number][] = geometry.map((point) => [point.lat, point.lon]);
+  if (line.length > 1) {
+    L.polyline(line, { color: '#0f766e', weight: 4, opacity: 0.85 }).addTo(map);
+  }
+  for (const station of stations) {
+    const name = escapeHtml(station.name ?? station.id);
+    L.circleMarker([station.lat, station.lon], {
+      radius: 6,
+      color: '#ffffff',
+      weight: 1,
+      fillColor: '#b45309',
+      fillOpacity: 1,
+    })
+      .bindPopup(`<strong>${name}</strong><p>${escapeHtml(station.detail)}</p>`)
+      .addTo(map);
+  }
+  if (line.length > 1) {
+    map.fitBounds(L.latLngBounds(line), { padding: [24, 24], maxZoom: 13 });
+  } else if (stations.length > 0) {
+    map.fitBounds(
+      L.latLngBounds(stations.map((station) => [station.lat, station.lon] as [number, number])),
+      { padding: [24, 24], maxZoom: 13 },
+    );
+  }
+
+  return { destroy: () => map.remove() };
+}

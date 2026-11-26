@@ -28,7 +28,7 @@
       "id": "01",
       "name": "Araba / Álava",
       "slug": "araba-alava-01",
-      "stationCount": 75
+      "stationCount": 74
     },
     {
       "id": "33",
@@ -244,7 +244,7 @@
       "id": "37",
       "name": "Salamanca",
       "slug": "salamanca-37",
-      "stationCount": 113
+      "stationCount": 112
     },
     {
       "id": "38",
@@ -2664,7 +2664,7 @@
       "name": "Arrazua-Ubarrundia",
       "slug": "arrazua-ubarrundia-7",
       "provinceId": "01",
-      "stationCount": 2
+      "stationCount": 1
     },
     {
       "id": "5237",
@@ -9118,13 +9118,6 @@
       "name": "Galera (La)",
       "slug": "galera-la-6407",
       "provinceId": "43",
-      "stationCount": 1
-    },
-    {
-      "id": "5457",
-      "name": "Galindo y Perahuy",
-      "slug": "galindo-y-perahuy-5457",
-      "provinceId": "37",
       "stationCount": 1
     },
     {

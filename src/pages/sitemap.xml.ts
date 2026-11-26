@@ -16,6 +16,7 @@ export const GET: APIRoute = ({ site }) => {
   const lastmod = (dates.at(-1) ?? '').slice(0, 10);
   const paths = [
     '/',
+    '/ruta/',
     ...provincePages.map((page) => page.url),
     ...municipalityPages.map((page) => page.url),
     ...chargingProvincePages.map((page) => page.url),

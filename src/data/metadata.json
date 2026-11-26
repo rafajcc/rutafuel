@@ -1,16 +1,16 @@
 {
   "dataVersion": 2,
-  "generatedAt": "2026-11-26T14:55:49.836Z",
+  "generatedAt": "2026-11-26T15:13:28.494Z",
   "sources": [
     {
       "id": "MINETUR",
       "url": "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/",
-      "fetchedAt": "2026-11-26T14:55:55.976Z",
+      "fetchedAt": "2026-11-26T15:13:33.478Z",
       "status": "active",
-      "sourceUpdatedAt": "2026-11-26T15:55:49",
-      "sourceUpdatedAtRaw": "26/11/2026 15:55:49",
-      "recordsReceived": 11552,
-      "recordsProcessed": 11548,
+      "sourceUpdatedAt": "2026-11-26T16:13:28",
+      "sourceUpdatedAtRaw": "26/11/2026 16:13:28",
+      "recordsReceived": 11550,
+      "recordsProcessed": 11546,
       "recordsDiscarded": 4,
       "recordsWithoutCoordinates": 4,
       "duplicateRecords": 0
@@ -18,7 +18,7 @@
     {
       "id": "RIPREE",
       "url": "https://energia.serviciosmin.gob.es/Ripree/ExportarInstalaciones/Export",
-      "fetchedAt": "2026-11-26T14:55:56.152Z",
+      "fetchedAt": "2026-11-26T15:13:33.652Z",
       "status": "active",
       "sourceUpdatedAt": "2026-11-20T13:11:00",
       "sourceUpdatedAtRaw": "20/11/2026 13:11:00",
@@ -31,7 +31,7 @@
     {
       "id": "OCM",
       "url": "https://api.openchargemap.io/v3/poi/",
-      "fetchedAt": "2026-11-26T14:55:49.836Z",
+      "fetchedAt": "2026-11-26T15:13:28.494Z",
       "status": "skipped",
       "note": "fuente omitida con --no-ocm",
       "recordsReceived": 0,
@@ -43,18 +43,18 @@
   ],
   "validation": {
     "ok": true,
-    "checkedAt": "2026-11-26T14:55:49.836Z",
+    "checkedAt": "2026-11-26T15:13:28.494Z",
     "checks": [
       {
         "name": "registros-mínimos",
         "ok": true,
-        "detail": "11548 estaciones válidas",
+        "detail": "11546 estaciones válidas",
         "severity": "error"
       },
       {
         "name": "identificadores-únicos",
         "ok": true,
-        "detail": "11548 IDs únicos para 11548 estaciones",
+        "detail": "11546 IDs únicos para 11546 estaciones",
         "severity": "error"
       },
       {
@@ -96,37 +96,37 @@
       {
         "name": "variación-vs-anterior",
         "ok": true,
-        "detail": "0.00% de variación respecto a 11548 estaciones",
+        "detail": "0.02% de variación respecto a 11548 estaciones",
         "severity": "error"
       },
       {
         "name": "fecha-fuente-no-regresiva",
         "ok": true,
-        "detail": "fuente anterior 2026-11-26T15:31:17, actual 2026-11-26T15:55:49",
+        "detail": "fuente anterior 2026-11-26T15:55:49, actual 2026-11-26T16:13:28",
         "severity": "warning"
       },
       {
         "name": "fichero-maestro",
         "ok": true,
-        "detail": "estaciones.json con 11548 registros",
+        "detail": "estaciones.json con 11546 registros",
         "severity": "error"
       },
       {
         "name": "índices-generados",
         "ok": true,
-        "detail": "52 índices de provincia, 3263 de municipio",
+        "detail": "52 índices de provincia, 3262 de municipio",
         "severity": "error"
       },
       {
         "name": "índices-coherentes",
         "ok": true,
-        "detail": "11548 estaciones indexadas",
+        "detail": "11546 estaciones indexadas",
         "severity": "error"
       },
       {
         "name": "buscador-coherente",
         "ok": true,
-        "detail": "3263 entradas de búsqueda, 0 inválidas",
+        "detail": "3262 entradas de búsqueda, 0 inválidas",
         "severity": "error"
       },
       {
@@ -224,13 +224,31 @@
         "ok": true,
         "detail": "0.00% de variación respecto a 12150 estaciones de recarga",
         "severity": "error"
+      },
+      {
+        "name": "rutas-indice-generado",
+        "ok": true,
+        "detail": "927 celdas en el índice de rutas",
+        "severity": "error"
+      },
+      {
+        "name": "rutas-indice-coherente",
+        "ok": true,
+        "detail": "11546 gasolineras y 12150 cargadores en 927 celdas",
+        "severity": "error"
+      },
+      {
+        "name": "rutas-celdas-válidas",
+        "ok": true,
+        "detail": "0 celdas y 0 registros inválidos",
+        "severity": "error"
       }
     ]
   },
   "totals": {
-    "stations": 11548,
+    "stations": 11546,
     "provinces": 52,
-    "municipalities": 3263,
+    "municipalities": 3262,
     "discarded": 4,
     "duplicates": 0,
     "withoutCoordinates": 4,
