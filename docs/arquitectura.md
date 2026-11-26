@@ -315,9 +315,10 @@ parciales en `src/data`.
 ## Estado actual y límites
 
 - `npm test`: 85 pruebas (22 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
-  `npm run build`: 2.052 rutas (portada, `/ruta/`, 52 provincias y 1.080 municipios de carburantes,
-  51 provincias y 867 municipios de recarga, sitemap y robots). `npm run verify:dist`: 30/30
-  comprobaciones correctas sobre `dist/` (SEO, presupuesto de assets, datos, Apache y Cloudflare Pages).
+  `npm run build`: 2.053 rutas con los datos actuales (variable con cada ingesta; portada, `/ruta/`,
+  52 provincias y 1.080 municipios de carburantes, 51 provincias y 867 municipios de recarga,
+  sitemap y robots). `npm run verify:dist`: 30/30 comprobaciones correctas sobre `dist/` (SEO,
+  presupuesto de assets, datos, Apache y Cloudflare Pages).
 - Ingesta real de referencia (26/11/2026): 11.546 gasolineras, 52 provincias, 3.262 municipios,
   12.150 estaciones de recarga y 36.052 puntos; 4 descartes, 0 duplicados y 0 filas RIPREE
   malformadas. La rejilla de rutas contiene 927 celdas (~5 MB) con las tres comprobaciones `rutas-*`

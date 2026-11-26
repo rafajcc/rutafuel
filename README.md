@@ -226,8 +226,8 @@ La información detallada de decisiones, modelos y umbrales de validación está
       espacial y estaciones ordenadas sobre la geometría real. 78 pruebas, `check` y `build` correctos
       (2.052 rutas).
 - [x] HITO 6 — Refresco parcial, GitHub Actions con validación y commit automático, despliegue dual
-      Apache/Plesk + Cloudflare Pages y `verify:dist`. 85 pruebas, `check`, `build` (2.052 rutas) y
-      verificación final (30/30 comprobaciones) correctos.
+      Apache/Plesk + Cloudflare Pages y `verify:dist`. 85 pruebas, `check`, `build` (2.053 rutas con
+      los datos actuales) y verificación final (30/30 comprobaciones) correctos.
 
 Pendiente para producción: verificación de Open Charge Map con una `OCM_API_KEY` real (sin clave la
 fuente queda registrada como `skipped`), prueba de los proveedores externos con endpoints propios y
