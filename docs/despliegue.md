@@ -4,18 +4,23 @@ RutaFuel es un sitio estático: **no se ejecuta Node.js en el servidor de produc
 de `dist/` se publica tal cual en Apache/Nginx gestionado por Plesk **o en Cloudflare Pages**.
 Ambos destinos usan exactamente el mismo build: no hace falta generar dos artefactos distintos.
 
+**Despliegue actual:** `https://rutafuel-6pz.pages.dev/`, publicado con la *Pages Git integration*
+desde la rama `main`. No hay dominio propio configurado.
+
 ## 1. Generación del sitio
 
 En local o en un runner de CI:
 
 ```bash
 npm ci
-SITE_URL=https://tu-dominio.es npm run build
+SITE_URL=https://rutafuel-6pz.pages.dev npm run build
 npm run verify:dist
 ```
 
-- `SITE_URL` debe ser la URL pública definitiva (sin barra final). Se usa en canonical, Open Graph,
-  `robots.txt` y `sitemap.xml`. Si no se define, se usa `https://rutafuel.es` como valor de ejemplo.
+- `SITE_URL` debe ser la URL pública exacta (sin barra final): `https://rutafuel-6pz.pages.dev`.
+  Se usa en canonical, `og:url`, JSON-LD, `robots.txt` y `sitemap.xml`. Si se publica en Plesk con
+  dominio propio, sustituir por esa URL. Si no se define, el valor por defecto `https://rutafuel.es`
+  es solo un ejemplo y **no** coincide con el sitio publicado.
 - `OCM_API_KEY` solo se necesita durante la ingesta; nunca se copia a `dist/`.
 - `npm run verify:dist` falla si faltan páginas o cabeceras, si el JS/CSS inicial supera el
   presupuesto, si los JSON públicos incluyen `raw` o si no se han copiado `.htaccess` y `_headers`.
@@ -57,34 +62,52 @@ rutas con barra final, `gzip on`, `expires` por tipo y `add_header` equivalentes
 
 ## 3. Cloudflare Pages
 
-El mismo `dist/` se publica sin recompilar: Cloudflare lee `_headers` e ignora `.htaccess`.
-Apache hace exactamente lo contrario: usa `.htaccess` y `_headers` queda bloqueado.
+Cloudflare ejecuta `npm run build` y sube `dist/` automáticamente; lee `_headers` e ignora
+`.htaccess`. Apache hace exactamente lo contrario: usa `.htaccess` y `_headers` queda bloqueado.
 
-1. En Cloudflare Dashboard → *Workers & Pages* → *Create* → *Pages* → conectar el repositorio de
-   GitHub.
+1. En Cloudflare Dashboard → *Workers & Pages* → *Create application* → *Pages* → *Connect to Git* y
+   conectar el repositorio de GitHub. No hace falta crear un Worker ni un token de API.
 2. Configuración del proyecto:
 
    | Opción | Valor |
    | --- | --- |
+   | Production branch | `main` |
    | Framework preset | **Astro** (o *None* si no aparece) |
    | Build command | `npm run build` |
    | Build output directory | `dist` |
    | Root directory | `/` |
-   | Variable de entorno | `SITE_URL=https://tu-dominio.es` |
-   | Node | versión de `.nvmrc` (22.23.4), vía Pages o `NODE_VERSION` |
+   | Deploy command | **Vacío**: no usar `wrangler deploy` ni `wrangler preview` |
+   | Variable de entorno (Production y Preview) | `SITE_URL=https://rutafuel-6pz.pages.dev` |
+   | Node | versión de `.nvmrc` (22.23.4); la imagen de build ya la trae, `NODE_VERSION` es opcional |
 
    `OCM_API_KEY` **no se configura en Pages**: solo se usa durante la ingesta en GitHub Actions.
-3. En *Settings → Domains* añadir el dominio definitivo. El hostname `*.pages.dev` se mantiene para
-   previews; `_headers` le añade `X-Robots-Tag: noindex` para no duplicar contenido indexable.
+3. No se añade dominio propio: el sitio se publica solo en `https://rutafuel-6pz.pages.dev/`. Ese
+   hostname es el que debe contener `SITE_URL`; el canonical, `og:url`, el JSON-LD, `robots.txt` y el
+   sitemap se generan con él.
+
+   **No usar `CF_PAGES_URL` como URL del sitio.** Cloudflare lo inyecta, pero contiene la URL del
+   deployment (`https://<hash>.rutafuel-6pz.pages.dev`) y cambia en cada build; usarlo dejaría los
+   enlaces canónicos apuntando a una URL efímera que luego desaparece.
 4. Cada push a `main` —incluidos los commits del bot de Actions— dispara el build y el despliegue.
-   No hace falta añadir un paso de deploy al workflow.
-5. Verificación rápida:
+   No hace falta añadir un paso de deploy al workflow ni `CLOUDFLARE_API_TOKEN` /
+   `CLOUDFLARE_ACCOUNT_ID`.
+5. Si un log parece antiguo, comprobar que `HEAD is now at ...` coincide con el SHA esperado. Para
+   forzar un rebuild se puede usar *Retry deployment* sobre esa fila o crear un commit vacío:
 
    ```bash
-   curl -I https://tu-proyecto.pages.dev/
-   curl -I https://tu-proyecto.pages.dev/_astro/<hash>.js   # max-age=31536000, immutable
-   curl -I https://tu-proyecto.pages.dev/data/buscador/municipios.json # max-age=3600
-   curl -fsS https://tu-proyecto.pages.dev/sitemap.xml | head
+   git commit --allow-empty -m "ci: fuerza rebuild en Cloudflare Pages"
+   git push origin main
+   ```
+
+6. Verificación rápida:
+
+   ```bash
+   curl -I https://rutafuel-6pz.pages.dev/          # 200 y SIN x-robots-tag: noindex
+   curl -fsS https://rutafuel-6pz.pages.dev/ | grep -o 'rel="canonical" href="[^"]*"'
+   curl -I https://rutafuel-6pz.pages.dev/_astro/<hash>.js   # max-age=31536000, immutable
+   curl -I https://rutafuel-6pz.pages.dev/data/buscador/municipios.json # max-age=3600
+   curl -fsS https://rutafuel-6pz.pages.dev/sitemap.xml | head
+   curl -I https://<hash>.rutafuel-6pz.pages.dev/    # preview: x-robots-tag: noindex
    ```
 
 Si quieres mantener también Plesk, sube por SFTP **el mismo `dist/`**: no necesitas otro build ni
@@ -97,7 +120,9 @@ otras variables.
 - `/_astro/*`: caché inmutable para assets con hash.
 - `! Cache-Control` antes de cada regla específica: Cloudflare une valores repetidos, y sin el
   `detach` las directivas `max-age` entrarían en conflicto.
-- `*.pages.dev`: `X-Robots-Tag: noindex` en previews.
+- `https://:version.:project.pages.dev/*`: `X-Robots-Tag: noindex` **solo en previews**. El hostname
+  de producción `rutafuel-6pz.pages.dev` queda indexable; Cloudflare ya marca los previews con
+  `noindex` por defecto y esta regla lo hace explícito.
 
 ## 4. Actualización automática de datos
 
@@ -132,8 +157,9 @@ En *Settings → Secrets and variables → Actions → New repository secret*:
 - `OCM_API_KEY` (opcional): clave gratuita de Open Charge Map. Se envía como cabecera `X-API-Key`.
   Sin ella la fuente queda `status: "skipped"` y el sitio sigue funcionando.
 
-`SITE_URL` no es un secreto: se define como variable de entorno en el build o se deja el valor por
-defecto del repositorio. Ninguna credencial se escribe en `src/data` ni en `public/data`.
+`SITE_URL` no es un secreto: se define como variable de Pages (Production y Preview) con el valor
+`https://rutafuel-6pz.pages.dev` o se pasa al build local. Ninguna credencial se escribe en
+`src/data` ni en `public/data`.
 
 ## 5. Reutilización y recuperación
 
