@@ -1,0 +1,104 @@
+{
+  "dataVersion": 1,
+  "generatedAt": "2026-11-26T13:32:50.987Z",
+  "sources": [
+    {
+      "id": "MINETUR",
+      "url": "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/",
+      "fetchedAt": "2026-11-26T13:32:55.990Z",
+      "sourceUpdatedAtRaw": "26/11/2026 14:32:51",
+      "sourceUpdatedAt": "2026-11-26T14:32:51",
+      "recordsReceived": 11553,
+      "recordsProcessed": 11549,
+      "recordsDiscarded": 4,
+      "recordsWithoutCoordinates": 4,
+      "duplicateRecords": 0
+    }
+  ],
+  "validation": {
+    "ok": true,
+    "checkedAt": "2026-11-26T13:32:50.987Z",
+    "checks": [
+      {
+        "name": "registros-mínimos",
+        "ok": true,
+        "detail": "11549 estaciones válidas",
+        "severity": "error"
+      },
+      {
+        "name": "identificadores-únicos",
+        "ok": true,
+        "detail": "11549 IDs únicos para 11549 estaciones",
+        "severity": "error"
+      },
+      {
+        "name": "identificadores-presentes",
+        "ok": true,
+        "detail": "Todas las estaciones tienen IDEESS",
+        "severity": "error"
+      },
+      {
+        "name": "coordenadas-válidas",
+        "ok": true,
+        "detail": "0 coordenadas inválidas en el resultado",
+        "severity": "error"
+      },
+      {
+        "name": "localización-presente",
+        "ok": true,
+        "detail": "0 estaciones sin municipio/provincia",
+        "severity": "error"
+      },
+      {
+        "name": "precios-en-rango",
+        "ok": true,
+        "detail": "0 precios fuera de rango",
+        "severity": "error"
+      },
+      {
+        "name": "descartes-proporción",
+        "ok": true,
+        "detail": "0.03% registros descartados",
+        "severity": "error"
+      },
+      {
+        "name": "duplicados-proporción",
+        "ok": true,
+        "detail": "0.00% IDs duplicados",
+        "severity": "error"
+      },
+      {
+        "name": "fichero-maestro",
+        "ok": true,
+        "detail": "estaciones.json con 11549 registros",
+        "severity": "error"
+      },
+      {
+        "name": "índices-generados",
+        "ok": true,
+        "detail": "52 índices de provincia, 3263 de municipio",
+        "severity": "error"
+      },
+      {
+        "name": "índices-coherentes",
+        "ok": true,
+        "detail": "11549 estaciones indexadas",
+        "severity": "error"
+      },
+      {
+        "name": "ficheros-no-vacíos",
+        "ok": true,
+        "detail": "0 ficheros vacíos",
+        "severity": "error"
+      }
+    ]
+  },
+  "totals": {
+    "stations": 11549,
+    "provinces": 52,
+    "municipalities": 3263,
+    "discarded": 4,
+    "duplicates": 0,
+    "withoutCoordinates": 4
+  }
+}

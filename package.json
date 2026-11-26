@@ -1,0 +1,30 @@
+{
+  "name": "rutafuel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Comparador de carburantes y recarga eléctrica en España (sitio estático)",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "ingest": "tsx scripts/fetch-data.ts",
+    "test": "tsx --test \"tests/*.test.ts\""
+  },
+  "dependencies": {
+    "astro": "^7.4.13"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/node": "^22.15.0",
+    "node": "^22.23.4",
+    "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22.23.4"
+  }
+}

@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+html {
+  color-scheme: light dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+}
+
+a {
+  @apply text-blue-700 underline decoration-blue-300 underline-offset-2 dark:text-blue-400 dark:decoration-blue-800;
+}
+
+a:hover {
+  @apply decoration-current;
+}

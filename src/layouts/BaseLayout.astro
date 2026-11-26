@@ -1,0 +1,45 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url).toString();
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="RutaFuel" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+  </head>
+  <body class="min-h-screen">
+    <header class="border-b border-slate-200 dark:border-slate-800">
+      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <a href="/" class="text-lg font-bold no-underline">RutaFuel</a>
+        <span class="text-xs text-slate-500 dark:text-slate-400">Datos oficiales · España</span>
+      </div>
+    </header>
+    <main class="mx-auto max-w-5xl px-4 py-6">
+      <slot />
+    </main>
+    <footer class="mx-auto max-w-5xl px-4 py-8 text-xs text-slate-500 dark:text-slate-400">
+      <p>
+        Precios facilitados por el Ministerio para la Transición Ecológica. Información orientativa;
+        el precio final puede variar en estación.
+      </p>
+    </footer>
+  </body>
+</html>
