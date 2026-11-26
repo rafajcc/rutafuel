@@ -3,8 +3,8 @@
 Plataforma estática para comparar precios de carburantes y puntos de recarga eléctrica en España.
 El proyecto sigue un desarrollo por hitos: **están implementados el HITO 1 (proyecto base y
 carburantes), el HITO 2 (ingesta de recarga), el HITO 3 (comparador de carburantes), el HITO 4
-(comparador eléctrico) y el HITO 5 (planificador de rutas)**. La automatización de despliegue
-pertenece al HITO 6.
+(comparador eléctrico), el HITO 5 (planificador de rutas) y el HITO 6 (optimización, automatización
+y preparación de despliegue)**.
 
 ## Requisitos
 
@@ -21,6 +21,7 @@ npm run check     # comprobación de tipos de Astro/TypeScript
 npm run ingest    # descarga real, normalización, validación y escritura atómica
 npm run dev       # servidor de desarrollo (prepara public/data antes de arrancar)
 npm run build     # prepara public/data y genera el sitio estático en dist/
+npm run verify:dist # comprueba SEO, presupuesto de assets, datos públicos y .htaccess
 ```
 
 Opciones de ingesta (útiles para reproducir o depurar sin depender de la red):
@@ -36,6 +37,8 @@ npx tsx scripts/fetch-data.ts --data-dir ruta/a/salida --dry-run
 - `--ripree-input` / `--ripree-url`: CSV guardado o endpoint alternativo de RIPREE.
 - `--ocm-input`: array de POIs guardado, para probar la normalización sin credenciales.
 - `--no-ocm`: omite Open Charge Map explícitamente.
+- `--skip-minetur` / `--skip-ripree` / `--skip-ocm`: refresco parcial; reutiliza el maestro y la
+  procedencia anteriores sin volver a descargar esa fuente. Requiere un dataset previo válido.
 - `--dry-run`: valida y genera todo sin escribir.
 - `--clave=valor` (en lugar de `--clave valor`) evita problemas de argv en Windows.
 
@@ -187,6 +190,20 @@ src/data/
   potencia y enlaces a Google Maps/Waze. Leaflet se carga dinámicamente al pulsar «Ver en el mapa» y
   dibuja la polilinea junto a las estaciones. No se muestra disponibilidad ni precio en tiempo real.
 
+## Automatización y despliegue (HITO 6)
+
+- `.github/workflows/update-data.yml` programa la ingesta de gasolineras cada 2 h y la de recarga a
+  las 03:30 UTC, admite ejecución manual (`fuel`, `charging`, `all`) y solo crea commit cuando
+  `src/data` cambia. Las fuentes omitidas se reutilizan del dataset anterior; la validación crítica
+  y la escritura atómica siguen siendo la puerta de salida.
+- `OCM_API_KEY` se configure como secreto de GitHub Actions (nunca en el repositorio). `SITE_URL`
+  controla canonical, sitemap y robots.
+- `public/.htaccess` viaja en `dist/` y aporta compresión, caché por tipo de archivo, cabeceras de
+  seguridad y prevención de listados. El procedimiento completo está en
+  [`docs/despliegue.md`](docs/despliegue.md).
+- `npm run verify:dist` comprueba el resultado: SEO, presupuesto de JS/CSS, ausencia de `raw` en los
+  JSON públicos, rejilla de rutas y configuración de Apache.
+
 ## Arquitectura
 
 La información detallada de decisiones, modelos y umbrales de validación está en
@@ -207,11 +224,14 @@ La información detallada de decisiones, modelos y umbrales de validación está
 - [x] HITO 5 — Planificador de rutas: geocodificación local/Nominatim, OSRM inyectable, rejilla
       espacial y estaciones ordenadas sobre la geometría real. 78 pruebas, `check` y `build` correctos
       (2.052 rutas).
-- [ ] HITO 6 — Optimización, GitHub Actions y despliegue en Plesk.
+- [x] HITO 6 — Refresco parcial, GitHub Actions con validación y commit automático, `.htaccess` para
+      Apache/Plesk y `verify:dist`. 84 pruebas, `check`, `build` (2.052 rutas) y verificación final
+      (25/25 comprobaciones) correctos.
 
-Pendiente: verificación de Open Charge Map con una `OCM_API_KEY` real (sin clave la fuente queda
-registrada como `skipped`) y prueba de los proveedores externos con endpoints reales; el demo público
-de OSRM y Nominatim solo se usa en uso limitado, no en producción.
+Pendiente para producción: verificación de Open Charge Map con una `OCM_API_KEY` real (sin clave la
+fuente queda registrada como `skipped`), prueba de los proveedores externos con endpoints propios y
+decisión del proveedor de teselas. El demo público de OSRM/Nominatim y las teselas de OpenStreetMap
+son de uso limitado: no deben emplearse en un despliegue comercial sin alternativa configurada.
 
 ## Aviso
 

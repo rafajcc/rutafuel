@@ -9,6 +9,7 @@
     "dev": "astro dev",
     "prebuild": "tsx scripts/prepare-web-data.ts",
     "build": "astro build",
+    "verify:dist": "tsx scripts/verify-dist.ts",
     "preview": "astro preview",
     "check": "astro check",
     "ingest": "tsx scripts/fetch-data.ts",

@@ -7,7 +7,7 @@ import {
   chargerProvinceIndexPath,
 } from './lib/charger-indexes.js';
 import { buildChargerIndex, buildChargerStatistics } from './lib/charger-stats.js';
-import { deduplicateChargers } from './lib/dedupe.js';
+import { deduplicateChargers, type MergeResult } from './lib/dedupe.js';
 import { MINETUR_URL, normalizeStations, validateResponse } from './lib/gasolineras.js';
 import { fetchJson } from './lib/http.js';
 import { buildIndexes, municipalityIndexPath, provinceIndexPath } from './lib/indexes.js';
@@ -26,12 +26,26 @@ import {
   RIPREE_EXPORT_PAGE_URL,
   type RipreeFetched,
 } from './lib/ripree.js';
+import {
+  mergeResultFromPrevious,
+  normalizedFromPrevious,
+  previousSource,
+  readPreviousStations,
+  requirePrevious,
+} from './lib/reuse.js';
 import { buildRouteIndex } from './lib/route-index.js';
 import { buildSearchIndex } from './lib/search-index.js';
 import { buildStatistics } from './lib/statistics.js';
 import { readPreviousMetadata, writeDatasetAtomic } from './lib/storage.js';
 import { DATA_VERSION, FUEL_KEYS, SOURCE_IDS } from './lib/types.js';
-import type { DatasetMetadata, MineturResponse, SourceInfo } from './lib/types.js';
+import type {
+  ChargingStation,
+  DatasetMetadata,
+  FuelStation,
+  MineturResponse,
+  NormalizeResult,
+  SourceInfo,
+} from './lib/types.js';
 import { validateDataset } from './lib/validation.js';
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -117,6 +131,7 @@ async function loadOcm(args: Args): Promise<OcmLoadResult> {
     const fetched = await readLocalOcm(input);
     return { fetched, url: fetched.finalUrl };
   }
+  if (args['skip-ocm']) return { skippedNote: 'fuente omitida en refresco parcial', url: OCM_API_URL };
   if (args['no-ocm']) return { skippedNote: 'fuente omitida con --no-ocm', url: OCM_API_URL };
 
   const apiKey = process.env.OCM_API_KEY?.trim();
@@ -168,72 +183,131 @@ async function main(): Promise<void> {
   const dataDir = path.resolve(projectRoot, stringArg(args, 'data-dir') ?? 'src/data');
   const generatedAt = new Date().toISOString();
   const inputPath = stringArg(args, 'input');
+  const previous = await readPreviousMetadata(dataDir);
+  const partial = Boolean(args['skip-minetur'] || args['skip-ripree'] || args['skip-ocm']);
+  const prior = partial ? requirePrevious(previous) : undefined;
 
-  console.log(
-    inputPath
-      ? `[rutafuel] Procesando fichero local ${path.resolve(inputPath)}`
-      : `[rutafuel] Descargando ${stringArg(args, 'url') ?? MINETUR_URL}`,
-  );
-  const fetched = await loadMinetur(args);
-  console.log(`[rutafuel] Recibidos ${(fetched.bytes / 1024 / 1024).toFixed(2)} MiB de MINETUR`);
+  let stations: FuelStation[];
+  let normalized: NormalizeResult;
+  let mineturSource: SourceInfo;
+  let mineturUpdatedAt: string;
 
-  const response = validateResponse(fetched.data);
-  logWarnings('MINETUR', response.warnings);
-  const normalized = normalizeStations(response.records);
-  logWarnings('MINETUR', normalized.warnings);
+  if (args['skip-minetur']) {
+    console.log('[rutafuel] MINETUR omitido: reutilizando el dataset anterior');
+    stations = await readPreviousStations<FuelStation>(dataDir, 'gasolineras/estaciones.json');
+    normalized = normalizedFromPrevious(stations);
+    mineturSource = previousSource(prior!, SOURCE_IDS.minetur);
+    mineturUpdatedAt = mineturSource.sourceUpdatedAt ?? '';
+  } else {
+    console.log(
+      inputPath
+        ? `[rutafuel] Procesando fichero local ${path.resolve(inputPath)}`
+        : `[rutafuel] Descargando ${stringArg(args, 'url') ?? MINETUR_URL}`,
+    );
+    const fetched = await loadMinetur(args);
+    console.log(`[rutafuel] Recibidos ${(fetched.bytes / 1024 / 1024).toFixed(2)} MiB de MINETUR`);
 
-  const indexes = buildIndexes(normalized.stations);
-  const mineturSource = sourceInfo({
-    id: SOURCE_IDS.minetur,
-    url: publicSourceUrl(fetched.finalUrl, stringArg(args, 'url') ?? MINETUR_URL),
-    fetchedAt: fetched.fetchedAt,
-    received: response.records.length,
-    processed: normalized.stations.length,
-    discarded: normalized.discarded.length,
-    withoutCoordinates: normalized.withoutCoordinates,
-    duplicates: normalized.duplicateIds.length,
-    sourceUpdatedAt: response.sourceDate.iso,
-    sourceUpdatedAtRaw: response.sourceDate.raw,
-  });
-
-  const ripreeFetched = await loadRipree(args);
-  console.log(`[rutafuel] Recibidos ${(ripreeFetched.bytes.byteLength / 1024 / 1024).toFixed(2)} MiB de RIPREE`);
-  const ripreeParsed = parseRipreeCsv(ripreeFetched.text);
-  const ripreeNormalized = normalizeRipree(ripreeParsed, {
-    fetchedAt: ripreeFetched.fetchedAt,
-    sourceUrl: publicSourceUrl(ripreeFetched.finalUrl, RIPREE_EXPORT_PAGE_URL),
-    sourceUpdatedAt: ripreeFetched.sourceUpdatedAt,
-  });
-  logWarnings('RIPREE', ripreeNormalized.warnings);
-
-  const ripreeUpdatedAt = ripreeFetched.sourceUpdatedAt ?? ripreeNormalized.latestUpdatedAt;
-  const ripreeUpdatedAtRaw = ripreeFetched.sourceUpdatedAtRaw ?? ripreeNormalized.latestUpdatedAtRaw;
-  if (!ripreeFetched.sourceUpdatedAt && ripreeUpdatedAt) {
-    for (const station of ripreeNormalized.stations) {
-      station.sources = station.sources.map((source) => ({
-        ...source,
-        sourceUpdatedAt: ripreeUpdatedAt,
-        ...(ripreeUpdatedAtRaw ? { sourceUpdatedAtRaw: ripreeUpdatedAtRaw } : {}),
-      }));
-    }
+    const response = validateResponse(fetched.data);
+    logWarnings('MINETUR', response.warnings);
+    normalized = normalizeStations(response.records);
+    logWarnings('MINETUR', normalized.warnings);
+    stations = normalized.stations;
+    mineturUpdatedAt = response.sourceDate.iso;
+    mineturSource = sourceInfo({
+      id: SOURCE_IDS.minetur,
+      url: publicSourceUrl(fetched.finalUrl, stringArg(args, 'url') ?? MINETUR_URL),
+      fetchedAt: fetched.fetchedAt,
+      received: response.records.length,
+      processed: normalized.stations.length,
+      discarded: normalized.discarded.length,
+      withoutCoordinates: normalized.withoutCoordinates,
+      duplicates: normalized.duplicateIds.length,
+      sourceUpdatedAt: response.sourceDate.iso,
+      sourceUpdatedAtRaw: response.sourceDate.raw,
+    });
   }
-  const ripreeSource = sourceInfo({
-    id: SOURCE_IDS.ripree,
-    url: publicSourceUrl(ripreeFetched.finalUrl, RIPREE_EXPORT_PAGE_URL),
-    fetchedAt: ripreeFetched.fetchedAt,
-    received: ripreeParsed.rows.length,
-    processed: ripreeNormalized.stations.length,
-    discarded: ripreeNormalized.discarded.length,
-    withoutCoordinates: ripreeNormalized.withoutCoordinates,
-    duplicates: ripreeNormalized.duplicateIds.length,
-    sourceUpdatedAt: ripreeUpdatedAt,
-    sourceUpdatedAtRaw: ripreeUpdatedAtRaw,
-  });
+
+  const indexes = buildIndexes(stations);
+
+  let merged!: MergeResult;
+  let ripreeStations: ChargingStation[];
+  let ripreeUpdatedAt: string | undefined;
+  let ripreeUpdatedAtRaw: string | undefined;
+  let ripreeSource: SourceInfo;
+  let malformedRipreeRows: number;
+
+  if (args['skip-ripree']) {
+    console.log('[rutafuel] RIPREE omitido: reutilizando el dataset anterior');
+    const previousChargers = await readPreviousStations<ChargingStation>(
+      dataDir,
+      'cargadores/estaciones.json',
+    );
+    merged = mergeResultFromPrevious(previousChargers);
+    ripreeStations = previousChargers;
+    ripreeSource = previousSource(prior!, SOURCE_IDS.ripree);
+    ripreeUpdatedAt = ripreeSource.sourceUpdatedAt;
+    ripreeUpdatedAtRaw = ripreeSource.sourceUpdatedAtRaw;
+    malformedRipreeRows = prior!.totals.malformedRipreeRows ?? 0;
+  } else {
+    const ripreeFetched = await loadRipree(args);
+    console.log(`[rutafuel] Recibidos ${(ripreeFetched.bytes.byteLength / 1024 / 1024).toFixed(2)} MiB de RIPREE`);
+    const ripreeParsed = parseRipreeCsv(ripreeFetched.text);
+    const ripreeNormalized = normalizeRipree(ripreeParsed, {
+      fetchedAt: ripreeFetched.fetchedAt,
+      sourceUrl: publicSourceUrl(ripreeFetched.finalUrl, RIPREE_EXPORT_PAGE_URL),
+      sourceUpdatedAt: ripreeFetched.sourceUpdatedAt,
+    });
+    logWarnings('RIPREE', ripreeNormalized.warnings);
+
+    ripreeUpdatedAt = ripreeFetched.sourceUpdatedAt ?? ripreeNormalized.latestUpdatedAt;
+    ripreeUpdatedAtRaw = ripreeFetched.sourceUpdatedAtRaw ?? ripreeNormalized.latestUpdatedAtRaw;
+    if (!ripreeFetched.sourceUpdatedAt && ripreeUpdatedAt) {
+      for (const station of ripreeNormalized.stations) {
+        station.sources = station.sources.map((source) => ({
+          ...source,
+          sourceUpdatedAt: ripreeUpdatedAt,
+          ...(ripreeUpdatedAtRaw ? { sourceUpdatedAtRaw: ripreeUpdatedAtRaw } : {}),
+        }));
+      }
+    }
+    ripreeStations = ripreeNormalized.stations;
+    ripreeSource = sourceInfo({
+      id: SOURCE_IDS.ripree,
+      url: publicSourceUrl(ripreeFetched.finalUrl, RIPREE_EXPORT_PAGE_URL),
+      fetchedAt: ripreeFetched.fetchedAt,
+      received: ripreeParsed.rows.length,
+      processed: ripreeNormalized.stations.length,
+      discarded: ripreeNormalized.discarded.length,
+      withoutCoordinates: ripreeNormalized.withoutCoordinates,
+      duplicates: ripreeNormalized.duplicateIds.length,
+      sourceUpdatedAt: ripreeUpdatedAt,
+      sourceUpdatedAtRaw: ripreeUpdatedAtRaw,
+    });
+    malformedRipreeRows = ripreeNormalized.malformedRows;
+  }
 
   const ocmLoad = await loadOcm(args);
   let ocmNormalized: ReturnType<typeof normalizeOcm> | undefined;
   let ocmSource: SourceInfo;
-  if (ocmLoad.fetched) {
+  if (args['skip-ocm']) {
+    const reused = prior!.sources.find((source) => source.id === SOURCE_IDS.ocm);
+    ocmSource = reused
+      ? {
+          ...reused,
+          ...(reused.status === 'skipped' ? { note: 'OCM no refrescada en esta ejecución' } : {}),
+        }
+      : sourceInfo({
+          id: SOURCE_IDS.ocm,
+          url: OCM_API_URL,
+          fetchedAt: generatedAt,
+          received: 0,
+          processed: 0,
+          discarded: 0,
+          withoutCoordinates: 0,
+          duplicates: 0,
+          note: ocmLoad.skippedNote,
+        });
+  } else if (ocmLoad.fetched) {
     ocmNormalized = normalizeOcm(ocmLoad.fetched.pois, {
       fetchedAt: ocmLoad.fetched.fetchedAt,
       sourceUrl: ocmLoad.fetched.finalUrl,
@@ -269,30 +343,29 @@ async function main(): Promise<void> {
     });
   }
 
-  const merged = deduplicateChargers(
-    ripreeNormalized.stations,
-    ocmNormalized?.stations ?? [],
-  );
-  console.log(
-    `[rutafuel] Deduplicación: ${merged.merged} fusiones ` +
-      `(${merged.matchedBy.officialId} por ID oficial, ${merged.matchedBy.proximity} por proximidad)`,
-  );
+  if (!args['skip-ripree']) {
+    merged = deduplicateChargers(ripreeStations, ocmNormalized?.stations ?? []);
+    console.log(
+      `[rutafuel] Deduplicación: ${merged.merged} fusiones ` +
+        `(${merged.matchedBy.officialId} por ID oficial, ${merged.matchedBy.proximity} por proximidad)`,
+    );
+  }
 
   const totals = {
     stations: normalized.stations.length,
     provinces: indexes.provinces.size,
     municipalities: indexes.municipalities.size,
-    discarded: normalized.discarded.length,
-    duplicates: normalized.duplicateIds.length,
+    discarded: args['skip-minetur'] ? prior!.totals.discarded : normalized.discarded.length,
+    duplicates: args['skip-minetur'] ? prior!.totals.duplicates : normalized.duplicateIds.length,
     withoutCoordinates: normalized.withoutCoordinates,
     chargingStations: merged.stations.length,
     chargingPoints: merged.stations.reduce((total, station) => total + station.pointCount, 0),
-    chargingDuplicates: merged.merged,
-    malformedRipreeRows: ripreeNormalized.malformedRows,
+    chargingDuplicates: args['skip-ripree'] ? (prior!.totals.chargingDuplicates ?? 0) : merged.merged,
+    malformedRipreeRows,
   };
 
   const files: Record<string, unknown> = {
-    'gasolineras/estaciones.json': normalized.stations,
+    'gasolineras/estaciones.json': stations,
     'gasolineras/indice.json': indexes.global,
   };
   for (const index of indexes.provinces.values()) files[provinceIndexPath(index)] = index;
@@ -301,18 +374,18 @@ async function main(): Promise<void> {
   }
 
   const statistics = buildStatistics({
-    stations: normalized.stations,
+    stations,
     indexes,
     generatedAt,
-    sourceUpdatedAt: response.sourceDate.iso,
+    sourceUpdatedAt: mineturUpdatedAt,
     totals,
     quality: {
       recordsWithoutPrices: normalized.stations.filter((station) =>
         FUEL_KEYS.every((fuel) => station.prices[fuel] === null),
       ).length,
       invalidPrices: normalized.invalidPrices,
-      discarded: normalized.discarded.length,
-      duplicates: normalized.duplicateIds.length,
+      discarded: args['skip-minetur'] ? prior!.totals.discarded : normalized.discarded.length,
+      duplicates: args['skip-minetur'] ? prior!.totals.duplicates : normalized.duplicateIds.length,
       withoutCoordinates: normalized.withoutCoordinates,
     },
   });
@@ -327,7 +400,7 @@ async function main(): Promise<void> {
     generatedAt,
     sourceUpdatedAt: ripreeUpdatedAt,
     duplicatesRemoved: merged.merged,
-    malformedRipreeRows: ripreeNormalized.malformedRows,
+    malformedRipreeRows,
   });
   const chargerGeoIndexes = buildChargerIndexes(merged.stations);
   files['cargadores/estaciones.json'] = merged.stations;
@@ -341,10 +414,10 @@ async function main(): Promise<void> {
   }
 
   const routeIndex = buildRouteIndex(
-    normalized.stations,
+    stations,
     merged.stations,
     generatedAt,
-    { fuel: response.sourceDate.iso, charging: ripreeUpdatedAt },
+    { fuel: mineturUpdatedAt, charging: ripreeUpdatedAt },
   );
   files['rutas/estaciones.json'] = routeIndex;
 
@@ -358,19 +431,22 @@ async function main(): Promise<void> {
   };
   files['metadata.json'] = metadata;
 
-  const previous = await readPreviousMetadata(dataDir);
   const validation = validateDataset({
-    stations: normalized.stations,
+    stations,
     normalized,
     files,
     previous,
     generatedAt,
     dataVersion: DATA_VERSION,
+    quality: {
+      discarded: args['skip-minetur'] ? prior!.totals.discarded : normalized.discarded.length,
+      duplicates: args['skip-minetur'] ? prior!.totals.duplicates : normalized.duplicateIds.length,
+    },
     chargers: {
       stations: merged.stations,
       index: chargerIndex,
       stats: chargerStats,
-      malformedRipreeRows: ripreeNormalized.malformedRows,
+      malformedRipreeRows,
       duplicatesRemoved: merged.merged,
     },
     route: {

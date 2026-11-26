@@ -1,13 +1,13 @@
 # Decisiones de arquitectura
 
-## Alcance actual (HITO 5)
+## Alcance actual (HITO 6)
 
 Sitio estático generado con Astro, sin backend. El navegador no necesita Node.js para funcionar; la
 ingesta se ejecuta en Node.js y produce JSON versionado que se publica junto al sitio. El HITO 3 añadió
 la interfaz de carburantes, el HITO 4 la de recarga y el HITO 5 el planificador de rutas: portada con
 ambos buscadores, páginas SEO, comparadores en cliente, mapa Leaflet bajo demanda y `/ruta/` con
-geocodificación, enrutado y estaciones sobre la geometría real. La automatización (HITO 6) sigue
-pendiente.
+geocodificación, enrutado y estaciones sobre la geometría real. El HITO 6 añade refresco parcial,
+GitHub Actions, verificación del build y configuración para Apache/Plesk.
 
 ## Stack y versiones
 
@@ -19,6 +19,8 @@ pendiente.
   ningún plugin de SEO.
 - RBush/Turf y proveedores de geocodificación/enrutado **no se instalan**: se decodifica la polyline y
   se consulta una rejilla propia con código sin dependencias (ver «Planificador de rutas»).
+- El HITO 6 no añade paquetes: GitHub Actions usa las acciones oficiales de checkout/setup-node y
+  `verify:dist` es un script `tsx` con módulos de Node.
 
 Astro 7 exige Node >= 22.23.4. Se fija esa versión en `.nvmrc` y se añade `node` como dependencia
 de desarrollo para que los scripts funcionen también en entornos con Node del sistema anterior.
@@ -240,6 +242,31 @@ centroide es aritmético sobre las estaciones reales, no una ubicación oficial.
   20 km para no consultar media España; Nominatim y OSRM se prueban solo con `fetchImpl` falso en los
   tests, y sus endpoints públicos son de uso limitado, no aptos para producción.
 
+## Automatización, rendimiento y despliegue (HITO 6)
+
+- **Refresco parcial**: `--skip-minetur`, `--skip-ripree` y `--skip-ocm` reutilizan el maestro y la
+  procedencia del dataset anterior. `scripts/lib/reuse.ts` concentra esa lógica: exige un
+  `metadata.json` previo, lee los maestros, reconstruye los datos de normalización sin inventar
+  descartes y copia la `SourceInfo` original. La validación acepta recuentos de calidad
+  (`quality.discarded` / `quality.duplicates`) para conservar las cifras históricas al no volver a
+  parsear una fuente. La escritura atómica no cambia.
+- **GitHub Actions**: `update-data.yml` programa MINETUR cada 2 h y la ingestión completa a las 03:30
+  UTC, con `workflow_dispatch` para elegir `fuel`, `charging` o `all`. Usa `concurrency` para evitar
+  ingestas simultáneas, instala con `npm ci` y la versión de `.nvmrc`, exige `npm test` y
+  `npm run check`, ejecuta la ingesta, `npm run build` y `npm run verify:dist`, y solo hace commit si
+  `src/data` ha cambiado. `OCM_API_KEY` se lee de `secrets` y nunca se escribe en el repositorio.
+  El resultado se resume en `$GITHUB_STEP_SUMMARY`.
+- **SEO y rendimiento medibles**: `BaseLayout.astro` añade `rel="sitemap"`, `og:locale` y
+  `meta robots`, además de canonical, Open Graph, JSON-LD y breadcrumbs ya existentes.
+  `scripts/verify-dist.ts` (`npm run verify:dist`) comprueba 25 condiciones: ficheros publicados,
+  sitemap y robots, HTML de `/ruta/`, presupuesto de JS inicial (≤ 48 KiB) y CSS (≤ 24 KiB), ausencia
+  de Leaflet en el HTML inicial, altura reservada para anuncios, 5.490 JSON sin `raw`, rejilla de
+  rutas y cabeceras de Apache.
+- **Plesk**: `public/.htaccess` se copia a `dist/` y configura compresión, caché inmutable para
+  assets con hash, caché corta para JSON, revalidación de HTML, cabeceras de seguridad y ausencia de
+  listados. `docs/despliegue.md` detalla document root, `AllowOverride`, HTTPS, comprobaciones con
+  `curl`, secretos y recuperación por `git revert`. No se requiere Node.js ni PHP en producción.
+
 ## Validación y escritura atómica
 
 Antes de publicar se comprueban: esquema de la respuesta, `ResultadoConsulta`, fecha, registros
@@ -252,8 +279,10 @@ en URLs de metadatos**. En el HITO 4 se comprueban además los índices geográf
 coherente con el maestro, centroides finitos dentro de rango y ausencia de `raw`). En el HITO 5 se
 añaden `rutas-indice-generado` (fichero publicado y número de celdas), `rutas-indice-coherente`
 (totales de gasolineras y cargadores iguales a los del dataset) y `rutas-celdas-válidas` (claves y
-registros con coordenadas finitas y campos admitidos). Los errores críticos detienen la publicación;
-los avisos se registran en `metadata.json`.
+registros con coordenadas finitas y campos admitidos). En el HITO 6, los refrescos parciales pasan
+los recuentos históricos de descartes y duplicados mediante `quality`, de modo que reutilizar una
+fuente no falsifica las proporciones. Los errores críticos detienen la publicación; los avisos se
+registran en `metadata.json`.
 
 La escritura ocurre en `src/.staging-data-*`; tras verificar que cada JSON es parseable y no está
 vacío se renombra el directorio anterior a `.backup-data-*`, se coloca el nuevo y se elimina el
@@ -278,10 +307,10 @@ parciales en `src/data`.
 
 ## Estado actual y límites
 
-- `npm test`: 78 pruebas (21 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
+- `npm test`: 84 pruebas (22 suites); `npm run check`: 0 errores, 0 avisos, 0 hints;
   `npm run build`: 2.052 rutas (portada, `/ruta/`, 52 provincias y 1.080 municipios de carburantes,
-  51 provincias y 867 municipios de recarga, sitemap y robots). Smoke test sobre `dist/`: 17/17
-  comprobaciones correctas.
+  51 provincias y 867 municipios de recarga, sitemap y robots). `npm run verify:dist`: 25/25
+  comprobaciones correctas sobre `dist/` (SEO, presupuesto de assets, datos y Apache).
 - Ingesta real de referencia (26/11/2026): 11.546 gasolineras, 52 provincias, 3.262 municipios,
   12.150 estaciones de recarga y 36.052 puntos; 4 descartes, 0 duplicados y 0 filas RIPREE
   malformadas. La rejilla de rutas contiene 927 celdas (~5 MB) con las tres comprobaciones `rutas-*`
@@ -300,4 +329,5 @@ parciales en `src/data`.
 El resultado de `npm run build` es un directorio `dist/` puramente estático, compatible con
 Apache/Nginx gestionados mediante Plesk. No se requiere Node.js en el servidor de producción.
 `OCM_API_KEY` se usa solo durante la ingesta (GitHub Actions o entorno local), nunca se escribe en el
-repositorio ni en JSON públicos.
+repositorio ni en JSON públicos. `public/.htaccess` se copia a `dist/` con compresión, caché y
+cabeceras, y el procedimiento paso a paso está en [`despliegue.md`](despliegue.md).

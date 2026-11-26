@@ -1,0 +1,102 @@
+name: Actualizar datos
+
+on:
+  schedule:
+    # Cada 2 horas: solo gasolineras (MINETUR publica varias veces al día).
+    - cron: '0 */2 * * *'
+    # Diario a las 03:30 UTC: recarga eléctrica (RIPREE y, si hay clave, OCM).
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: Fuentes a actualizar
+        required: true
+        type: choice
+        default: fuel
+        options:
+          - fuel
+          - charging
+          - all
+
+permissions:
+  contents: write
+
+# Evita dos ingestas concurrentes escribiendo el mismo dataset.
+concurrency:
+  group: update-data-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Pruebas y tipos
+        run: |
+          npm test
+          npm run check
+
+      - name: Elegir modo de ingesta
+        id: mode
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          SOURCE: ${{ github.event.inputs.source }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            case "$SOURCE" in
+              fuel) args="--skip-ripree --skip-ocm" ;;
+              charging) args="--skip-minetur" ;;
+              all) args="" ;;
+            esac
+          elif [ "$SCHEDULE" = "0 */2 * * *" ]; then
+            args="--skip-ripree --skip-ocm"
+          else
+            args=""
+          fi
+          echo "args=$args" >> "$GITHUB_OUTPUT"
+          echo "Modo de ingesta: ${args:-completa}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Ingesta validada
+        env:
+          OCM_API_KEY: ${{ secrets.OCM_API_KEY }}
+        run: npm run ingest -- ${{ steps.mode.outputs.args }}
+
+      - name: Build y verificación final
+        run: |
+          npm run build
+          npm run verify:dist
+
+      - name: Confirmar cambios
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain -- src/data)" ]; then
+            git add src/data
+            git commit -m "datos: actualizar ingesta programada (${GITHUB_RUN_ID})"
+            git push
+            echo "Datos actualizados y publicados" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Sin cambios en los datos: no se crea commit" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Resumen de ejecución
+        if: always()
+        shell: bash
+        env:
+          STATUS: ${{ job.status }}
+        run: echo "Resultado: $STATUS" >> "$GITHUB_STEP_SUMMARY"

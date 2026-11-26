@@ -32,6 +32,8 @@ export interface DatasetValidationInput {
   previous?: DatasetMetadata;
   generatedAt: string;
   dataVersion: number;
+  /** Recuentos de la ejecución original cuando una fuente se reutiliza sin volver a parsearla. */
+  quality?: { discarded?: number; duplicates?: number };
   chargers?: ChargerValidationInput;
   route?: RouteValidationInput;
 }
@@ -79,7 +81,9 @@ export function validateDataset(input: DatasetValidationInput): ValidationResult
   );
   add('precios-en-rango', badPrices.length === 0, `${badPrices.length} precios fuera de rango`);
 
-  const discardRatio = normalized.discarded.length / (normalized.discarded.length + stations.length || 1);
+  const discardedCount = input.quality?.discarded ?? normalized.discarded.length;
+  const duplicateCount = input.quality?.duplicates ?? normalized.duplicateIds.length;
+  const discardRatio = discardedCount / (discardedCount + stations.length || 1);
   add(
     'descartes-proporción',
     discardRatio <= 0.1,
@@ -87,7 +91,7 @@ export function validateDataset(input: DatasetValidationInput): ValidationResult
     discardRatio > 0.02 && discardRatio <= 0.1 ? 'warning' : 'error',
   );
 
-  const duplicateRatio = normalized.duplicateIds.length / (stations.length || 1);
+  const duplicateRatio = duplicateCount / (stations.length || 1);
   add(
     'duplicados-proporción',
     duplicateRatio <= 0.05,
