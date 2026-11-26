@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, it } from 'node:test';
+import YAML from 'yaml';
 import {
   mergeResultFromPrevious,
   normalizedFromPrevious,
@@ -166,6 +167,16 @@ describe('HITO 6: automatización, rendimiento y despliegue', () => {
       path.resolve('.github/workflows/update-data.yml'),
       'utf8',
     );
+    // Un YAML inválido hace que GitHub cree runs de push con "No jobs were run"
+    // y que no registre los cron: validar el parse evita errores silenciosos.
+    const parsed = YAML.parse(workflow) as {
+      on?: { schedule?: unknown[]; workflow_dispatch?: unknown };
+      jobs?: Record<string, unknown>;
+    };
+    assert.equal(Array.isArray(parsed.on?.schedule), true, 'cron no registrado');
+    assert.ok(parsed.on?.workflow_dispatch, 'workflow_dispatch no registrado');
+    assert.ok(parsed.jobs?.update, 'job update no registrado');
+
     for (const token of [
       '0 */2 * * *',
       '30 3 * * *',

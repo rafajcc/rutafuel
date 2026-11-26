@@ -13,14 +13,17 @@ GitHub Actions, verificación del build y configuración para Apache/Plesk y Clo
 
 - Astro 7 (SSG), TypeScript estricto y Tailwind 4 (plugin de Vite).
 - `tsx` para ejecutar scripts TypeScript sin configuración adicional.
-- Pruebas con `node:test` (incluido en Node.js), sin dependencias de test adicionales.
+- Pruebas con `node:test` (incluido en Node.js) y `yaml` para validar el parseo del workflow de
+  GitHub Actions: un YAML inválido degradaba el run a «No jobs were run» y dejaba sin registrar los
+  cron de ingesta.
 - Leaflet 1.9 y `@types/leaflet` son las únicas dependencias nuevas del HITO 3; los hitos 4 y 5 las
   reutilizan sin añadir paquetes. `sitemap.xml` y `robots.txt` son endpoints de Astro: no se añade
   ningún plugin de SEO.
 - RBush/Turf y proveedores de geocodificación/enrutado **no se instalan**: se decodifica la polyline y
   se consulta una rejilla propia con código sin dependencias (ver «Planificador de rutas»).
-- El HITO 6 no añade paquetes: GitHub Actions usa las acciones oficiales de checkout/setup-node y
-  `verify:dist` es un script `tsx` con módulos de Node.
+- El HITO 6 añade únicamente `yaml` (dependencia de desarrollo) para el test de parseo del workflow;
+  GitHub Actions usa las acciones oficiales de checkout/setup-node y `verify:dist` es un script `tsx`
+  con módulos de Node.
 
 Astro 7 exige Node >= 22.23.4. Se fija esa versión en `.nvmrc` y se añade `node` como dependencia
 de desarrollo para que los scripts funcionen también en entornos con Node del sistema anterior.

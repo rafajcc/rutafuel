@@ -99,4 +99,5 @@ jobs:
         shell: bash
         env:
           STATUS: ${{ job.status }}
-        run: echo "Resultado: $STATUS" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo "Resultado: $STATUS" >> "$GITHUB_STEP_SUMMARY"
