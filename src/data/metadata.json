@@ -1,14 +1,14 @@
 {
   "dataVersion": 2,
-  "generatedAt": "2026-11-27T10:16:27.515Z",
+  "generatedAt": "2026-11-27T10:23:26.417Z",
   "sources": [
     {
       "id": "MINETUR",
       "url": "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/",
-      "fetchedAt": "2026-11-27T10:16:49.340Z",
+      "fetchedAt": "2026-11-27T10:23:45.416Z",
       "status": "active",
-      "sourceUpdatedAt": "2026-11-27T11:16:27",
-      "sourceUpdatedAtRaw": "27/11/2026 11:16:27",
+      "sourceUpdatedAt": "2026-11-27T11:23:26",
+      "sourceUpdatedAtRaw": "27/11/2026 11:23:26",
       "recordsReceived": 11546,
       "recordsProcessed": 11543,
       "recordsDiscarded": 3,
@@ -43,7 +43,7 @@
   ],
   "validation": {
     "ok": true,
-    "checkedAt": "2026-11-27T10:16:27.515Z",
+    "checkedAt": "2026-11-27T10:23:26.417Z",
     "checks": [
       {
         "name": "registros-mínimos",
@@ -96,13 +96,13 @@
       {
         "name": "variación-vs-anterior",
         "ok": true,
-        "detail": "0.03% de variación respecto a 11546 estaciones",
+        "detail": "0.00% de variación respecto a 11543 estaciones",
         "severity": "error"
       },
       {
         "name": "fecha-fuente-no-regresiva",
         "ok": true,
-        "detail": "fuente anterior 2026-11-26T17:15:36, actual 2026-11-27T11:16:27",
+        "detail": "fuente anterior 2026-11-27T11:16:27, actual 2026-11-27T11:23:26",
         "severity": "warning"
       },
       {
