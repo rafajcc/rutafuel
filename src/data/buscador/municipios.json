@@ -5174,9 +5174,9 @@
     "provinceId": "39",
     "provinceName": "Cantabria",
     "provinceSlug": "cantabria-39",
-    "stationCount": 3,
-    "lat": 43.407074,
-    "lon": -3.838444,
+    "stationCount": 4,
+    "lat": 43.405424,
+    "lon": -3.839791,
     "postalCodes": [
       "39611",
       "39613"
@@ -6902,20 +6902,6 @@
     ]
   },
   {
-    "id": "4968",
-    "name": "Belmonte de Miranda",
-    "slug": "belmonte-de-miranda-4968",
-    "provinceId": "33",
-    "provinceName": "Asturias",
-    "provinceSlug": "asturias-33",
-    "stationCount": 1,
-    "lat": 43.286861,
-    "lon": -6.218333,
-    "postalCodes": [
-      "33830"
-    ]
-  },
-  {
     "id": "1211",
     "name": "Belorado",
     "slug": "belorado-1211",
@@ -7056,20 +7042,6 @@
     "lon": -5.818097,
     "postalCodes": [
       "11190"
-    ]
-  },
-  {
-    "id": "4480",
-    "name": "Benamargosa",
-    "slug": "benamargosa-4480",
-    "provinceId": "29",
-    "provinceName": "Málaga",
-    "provinceSlug": "malaga-29",
-    "stationCount": 1,
-    "lat": 36.832083,
-    "lon": -4.193,
-    "postalCodes": [
-      "29718"
     ]
   },
   {
@@ -12216,9 +12188,9 @@
     "provinceId": "12",
     "provinceName": "Castellón / Castelló",
     "provinceSlug": "castellon-castello-12",
-    "stationCount": 37,
-    "lat": 39.982265,
-    "lon": -0.043527,
+    "stationCount": 36,
+    "lat": 39.982492,
+    "lon": -0.042639,
     "postalCodes": [
       "12000",
       "12003",
@@ -14002,6 +13974,20 @@
     "lon": -3.460944,
     "postalCodes": [
       "39750"
+    ]
+  },
+  {
+    "id": "3872",
+    "name": "Coll de Nargó",
+    "slug": "coll-de-nargo-3872",
+    "provinceId": "25",
+    "provinceName": "Lleida",
+    "provinceSlug": "lleida-25",
+    "stationCount": 1,
+    "lat": 42.172722,
+    "lon": 1.320417,
+    "postalCodes": [
+      "25793"
     ]
   },
   {
@@ -16404,20 +16390,6 @@
     "lon": -0.348028,
     "postalCodes": [
       "46590"
-    ]
-  },
-  {
-    "id": "3378",
-    "name": "Estopiñán del Castillo",
-    "slug": "estopinan-del-castillo-3378",
-    "provinceId": "22",
-    "provinceName": "Huesca",
-    "provinceSlug": "huesca-22",
-    "stationCount": 1,
-    "lat": 41.978278,
-    "lon": 0.490083,
-    "postalCodes": [
-      "22589"
     ]
   },
   {
@@ -20419,9 +20391,9 @@
     "provinceId": "03",
     "provinceName": "Alicante",
     "provinceSlug": "alicante-03",
-    "stationCount": 5,
-    "lat": 38.616128,
-    "lon": -0.582455,
+    "stationCount": 4,
+    "lat": 38.613521,
+    "lon": -0.58609,
     "postalCodes": [
       "03440"
     ]
@@ -29374,9 +29346,9 @@
     "provinceId": "35",
     "provinceName": "Las Palmas",
     "provinceSlug": "las-palmas-35",
-    "stationCount": 57,
-    "lat": 28.104934,
-    "lon": -15.44095,
+    "stationCount": 56,
+    "lat": 28.105059,
+    "lon": -15.440918,
     "postalCodes": [
       "35001",
       "35002",
@@ -30593,12 +30565,13 @@
     "provinceId": "39",
     "provinceName": "Cantabria",
     "provinceSlug": "cantabria-39",
-    "stationCount": 3,
-    "lat": 43.373991,
-    "lon": -3.941732,
+    "stationCount": 4,
+    "lat": 43.366757,
+    "lon": -3.954931,
     "postalCodes": [
       "39470",
       "39478",
+      "39479",
       "39612"
     ]
   },
@@ -32090,9 +32063,9 @@
     "provinceId": "18",
     "provinceName": "Granada",
     "provinceSlug": "granada-18",
-    "stationCount": 1,
-    "lat": 37.983278,
-    "lon": -2.333306,
+    "stationCount": 2,
+    "lat": 37.97025,
+    "lon": -2.383875,
     "postalCodes": [
       "18820"
     ]
@@ -37531,8 +37504,8 @@
     "provinceName": "Illes Balears",
     "provinceSlug": "illes-balears-07",
     "stationCount": 5,
-    "lat": 39.387956,
-    "lon": 3.158456,
+    "lat": 39.374272,
+    "lon": 3.178711,
     "postalCodes": [
       "07650",
       "07660"
@@ -46632,9 +46605,9 @@
     "provinceId": "50",
     "provinceName": "Zaragoza",
     "provinceSlug": "zaragoza-50",
-    "stationCount": 75,
-    "lat": 41.652165,
-    "lon": -0.904046,
+    "stationCount": 74,
+    "lat": 41.65189,
+    "lon": -0.904613,
     "postalCodes": [
       "50001",
       "50002",

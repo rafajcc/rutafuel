@@ -16,7 +16,7 @@
       "id": "03",
       "name": "Alicante",
       "slug": "alicante-03",
-      "stationCount": 481
+      "stationCount": 480
     },
     {
       "id": "04",
@@ -34,7 +34,7 @@
       "id": "33",
       "name": "Asturias",
       "slug": "asturias-33",
-      "stationCount": 242
+      "stationCount": 241
     },
     {
       "id": "05",
@@ -82,13 +82,13 @@
       "id": "39",
       "name": "Cantabria",
       "slug": "cantabria-39",
-      "stationCount": 165
+      "stationCount": 167
     },
     {
       "id": "12",
       "name": "Castellón / Castelló",
       "slug": "castellon-castello-12",
-      "stationCount": 200
+      "stationCount": 199
     },
     {
       "id": "51",
@@ -130,7 +130,7 @@
       "id": "18",
       "name": "Granada",
       "slug": "granada-18",
-      "stationCount": 288
+      "stationCount": 289
     },
     {
       "id": "19",
@@ -148,7 +148,7 @@
       "id": "22",
       "name": "Huesca",
       "slug": "huesca-22",
-      "stationCount": 125
+      "stationCount": 124
     },
     {
       "id": "07",
@@ -172,7 +172,7 @@
       "id": "35",
       "name": "Las Palmas",
       "slug": "las-palmas-35",
-      "stationCount": 257
+      "stationCount": 256
     },
     {
       "id": "24",
@@ -184,7 +184,7 @@
       "id": "25",
       "name": "Lleida",
       "slug": "lleida-25",
-      "stationCount": 183
+      "stationCount": 184
     },
     {
       "id": "27",
@@ -202,7 +202,7 @@
       "id": "29",
       "name": "Málaga",
       "slug": "malaga-29",
-      "stationCount": 315
+      "stationCount": 314
     },
     {
       "id": "52",
@@ -310,7 +310,7 @@
       "id": "50",
       "name": "Zaragoza",
       "slug": "zaragoza-50",
-      "stationCount": 239
+      "stationCount": 238
     }
   ],
   "municipalities": [
@@ -2846,7 +2846,7 @@
       "name": "Astillero (El)",
       "slug": "astillero-el-5751",
       "provinceId": "39",
-      "stationCount": 3
+      "stationCount": 4
     },
     {
       "id": "3600",
@@ -3675,13 +3675,6 @@
       "stationCount": 1
     },
     {
-      "id": "4968",
-      "name": "Belmonte de Miranda",
-      "slug": "belmonte-de-miranda-4968",
-      "provinceId": "33",
-      "stationCount": 1
-    },
-    {
       "id": "1211",
       "name": "Belorado",
       "slug": "belorado-1211",
@@ -3750,13 +3743,6 @@
       "slug": "benalup-casas-viejas-1770",
       "provinceId": "11",
       "stationCount": 2
-    },
-    {
-      "id": "4480",
-      "name": "Benamargosa",
-      "slug": "benamargosa-4480",
-      "provinceId": "29",
-      "stationCount": 1
     },
     {
       "id": "2696",
@@ -6290,7 +6276,7 @@
       "name": "Castellón de la Plana/Castelló de la Plana",
       "slug": "castellon-de-la-plana-castello-de-la-plana-1842",
       "provinceId": "12",
-      "stationCount": 37
+      "stationCount": 36
     },
     {
       "id": "926",
@@ -7166,6 +7152,13 @@
       "slug": "colindres-5767",
       "provinceId": "39",
       "stationCount": 2
+    },
+    {
+      "id": "3872",
+      "name": "Coll de Nargó",
+      "slug": "coll-de-nargo-3872",
+      "provinceId": "25",
+      "stationCount": 1
     },
     {
       "id": "5899",
@@ -8320,13 +8313,6 @@
       "name": "Estivella",
       "slug": "estivella-7081",
       "provinceId": "46",
-      "stationCount": 1
-    },
-    {
-      "id": "3378",
-      "name": "Estopiñán del Castillo",
-      "slug": "estopinan-del-castillo-3378",
-      "provinceId": "22",
       "stationCount": 1
     },
     {
@@ -10280,7 +10266,7 @@
       "name": "Ibi",
       "slug": "ibi-216",
       "provinceId": "03",
-      "stationCount": 5
+      "stationCount": 4
     },
     {
       "id": "4991",
@@ -14599,7 +14585,7 @@
       "name": "Palmas de Gran Canaria (Las)",
       "slug": "palmas-de-gran-canaria-las-5249",
       "provinceId": "35",
-      "stationCount": 57
+      "stationCount": 56
     },
     {
       "id": "2564",
@@ -15194,7 +15180,7 @@
       "name": "Piélagos",
       "slug": "pielagos-5795",
       "provinceId": "39",
-      "stationCount": 3
+      "stationCount": 4
     },
     {
       "id": "1027",
@@ -15929,7 +15915,7 @@
       "name": "Puebla de Don Fadrique",
       "slug": "puebla-de-don-fadrique-2808",
       "provinceId": "18",
-      "stationCount": 1
+      "stationCount": 2
     },
     {
       "id": "2010",
@@ -23013,7 +22999,7 @@
       "name": "Zaragoza",
       "slug": "zaragoza-8108",
       "provinceId": "50",
-      "stationCount": 75
+      "stationCount": 74
     },
     {
       "id": "7455",

@@ -1,18 +1,18 @@
 {
   "dataVersion": 2,
-  "generatedAt": "2026-11-26T16:15:35.881Z",
+  "generatedAt": "2026-11-27T10:16:27.515Z",
   "sources": [
     {
       "id": "MINETUR",
       "url": "https://sedeaplicaciones.minetur.gob.es/ServiciosRESTCarburantes/PreciosCarburantes/EstacionesTerrestres/",
-      "fetchedAt": "2026-11-26T16:15:54.624Z",
+      "fetchedAt": "2026-11-27T10:16:49.340Z",
       "status": "active",
-      "sourceUpdatedAt": "2026-11-26T17:15:36",
-      "sourceUpdatedAtRaw": "26/11/2026 17:15:36",
-      "recordsReceived": 11550,
-      "recordsProcessed": 11546,
-      "recordsDiscarded": 4,
-      "recordsWithoutCoordinates": 4,
+      "sourceUpdatedAt": "2026-11-27T11:16:27",
+      "sourceUpdatedAtRaw": "27/11/2026 11:16:27",
+      "recordsReceived": 11546,
+      "recordsProcessed": 11543,
+      "recordsDiscarded": 3,
+      "recordsWithoutCoordinates": 3,
       "duplicateRecords": 0
     },
     {
@@ -43,18 +43,18 @@
   ],
   "validation": {
     "ok": true,
-    "checkedAt": "2026-11-26T16:15:35.881Z",
+    "checkedAt": "2026-11-27T10:16:27.515Z",
     "checks": [
       {
         "name": "registros-mínimos",
         "ok": true,
-        "detail": "11546 estaciones válidas",
+        "detail": "11543 estaciones válidas",
         "severity": "error"
       },
       {
         "name": "identificadores-únicos",
         "ok": true,
-        "detail": "11546 IDs únicos para 11546 estaciones",
+        "detail": "11543 IDs únicos para 11543 estaciones",
         "severity": "error"
       },
       {
@@ -96,37 +96,37 @@
       {
         "name": "variación-vs-anterior",
         "ok": true,
-        "detail": "0.00% de variación respecto a 11546 estaciones",
+        "detail": "0.03% de variación respecto a 11546 estaciones",
         "severity": "error"
       },
       {
         "name": "fecha-fuente-no-regresiva",
         "ok": true,
-        "detail": "fuente anterior 2026-11-26T16:13:28, actual 2026-11-26T17:15:36",
+        "detail": "fuente anterior 2026-11-26T17:15:36, actual 2026-11-27T11:16:27",
         "severity": "warning"
       },
       {
         "name": "fichero-maestro",
         "ok": true,
-        "detail": "estaciones.json con 11546 registros",
+        "detail": "estaciones.json con 11543 registros",
         "severity": "error"
       },
       {
         "name": "índices-generados",
         "ok": true,
-        "detail": "52 índices de provincia, 3262 de municipio",
+        "detail": "52 índices de provincia, 3260 de municipio",
         "severity": "error"
       },
       {
         "name": "índices-coherentes",
         "ok": true,
-        "detail": "11546 estaciones indexadas",
+        "detail": "11543 estaciones indexadas",
         "severity": "error"
       },
       {
         "name": "buscador-coherente",
         "ok": true,
-        "detail": "3262 entradas de búsqueda, 0 inválidas",
+        "detail": "3260 entradas de búsqueda, 0 inválidas",
         "severity": "error"
       },
       {
@@ -234,7 +234,7 @@
       {
         "name": "rutas-indice-coherente",
         "ok": true,
-        "detail": "11546 gasolineras y 12150 cargadores en 927 celdas",
+        "detail": "11543 gasolineras y 12150 cargadores en 927 celdas",
         "severity": "error"
       },
       {
@@ -246,12 +246,12 @@
     ]
   },
   "totals": {
-    "stations": 11546,
+    "stations": 11543,
     "provinces": 52,
-    "municipalities": 3262,
-    "discarded": 4,
+    "municipalities": 3260,
+    "discarded": 3,
     "duplicates": 0,
-    "withoutCoordinates": 4,
+    "withoutCoordinates": 3,
     "chargingStations": 12150,
     "chargingPoints": 36052,
     "chargingDuplicates": 0,
