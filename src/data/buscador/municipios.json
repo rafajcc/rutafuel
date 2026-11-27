@@ -5601,9 +5601,9 @@
     "provinceId": "06",
     "provinceName": "Badajoz",
     "provinceSlug": "badajoz-06",
-    "stationCount": 41,
-    "lat": 38.884577,
-    "lon": -6.952988,
+    "stationCount": 42,
+    "lat": 38.884457,
+    "lon": -6.95279,
     "postalCodes": [
       "06004",
       "06005",
@@ -8680,6 +8680,20 @@
     "lon": -8.751972,
     "postalCodes": [
       "36939"
+    ]
+  },
+  {
+    "id": "7042",
+    "name": "Bugarra",
+    "slug": "bugarra-7042",
+    "provinceId": "46",
+    "provinceName": "Valencia / València",
+    "provinceSlug": "valencia-valencia-46",
+    "stationCount": 1,
+    "lat": 39.609083,
+    "lon": -0.773389,
+    "postalCodes": [
+      "46165"
     ]
   },
   {
@@ -13400,9 +13414,9 @@
     "provinceId": "12",
     "provinceName": "Castellón / Castelló",
     "provinceSlug": "castellon-castello-12",
-    "stationCount": 2,
-    "lat": 39.787139,
-    "lon": -0.181041,
+    "stationCount": 1,
+    "lat": 39.795694,
+    "lon": -0.181361,
     "postalCodes": [
       "12592"
     ]
@@ -20964,9 +20978,9 @@
     "provinceId": "10",
     "provinceName": "Cáceres",
     "provinceSlug": "caceres-10",
-    "stationCount": 4,
-    "lat": 40.047986,
-    "lon": -5.745313,
+    "stationCount": 3,
+    "lat": 40.046954,
+    "lon": -5.745528,
     "postalCodes": [
       "10400"
     ]
@@ -21725,9 +21739,9 @@
     "provinceId": "16",
     "provinceName": "Cuenca",
     "provinceSlug": "cuenca-16",
-    "stationCount": 2,
-    "lat": 39.363277,
-    "lon": -1.719041,
+    "stationCount": 1,
+    "lat": 39.367861,
+    "lon": -1.72125,
     "postalCodes": [
       "16237"
     ]
@@ -22997,9 +23011,9 @@
     "provinceId": "32",
     "provinceName": "Ourense",
     "provinceSlug": "ourense-32",
-    "stationCount": 2,
-    "lat": 42.291959,
-    "lon": -7.661444,
+    "stationCount": 1,
+    "lat": 42.27225,
+    "lon": -7.646778,
     "postalCodes": [
       "32700"
     ]
@@ -24214,9 +24228,9 @@
     "provinceId": "30",
     "provinceName": "Murcia",
     "provinceSlug": "murcia-30",
-    "stationCount": 13,
-    "lat": 37.598368,
-    "lon": -1.316368,
+    "stationCount": 14,
+    "lat": 37.595687,
+    "lon": -1.320847,
     "postalCodes": [
       "30860",
       "30868",
@@ -32063,9 +32077,9 @@
     "provinceId": "18",
     "provinceName": "Granada",
     "provinceSlug": "granada-18",
-    "stationCount": 2,
-    "lat": 37.97025,
-    "lon": -2.383875,
+    "stationCount": 1,
+    "lat": 37.983278,
+    "lon": -2.333306,
     "postalCodes": [
       "18820"
     ]
@@ -33460,8 +33474,8 @@
     "provinceName": "Cantabria",
     "provinceSlug": "cantabria-39",
     "stationCount": 1,
-    "lat": 43.391056,
-    "lon": -3.665,
+    "lat": 43.390639,
+    "lon": -3.665083,
     "postalCodes": [
       "39794"
     ]
@@ -35413,6 +35427,20 @@
     ]
   },
   {
+    "id": "6911",
+    "name": "San Martín de Montalbán",
+    "slug": "san-martin-de-montalban-6911",
+    "provinceId": "45",
+    "provinceName": "Toledo",
+    "provinceSlug": "toledo-45",
+    "stationCount": 1,
+    "lat": 39.692639,
+    "lon": -4.38225,
+    "postalCodes": [
+      "45165"
+    ]
+  },
+  {
     "id": "5022",
     "name": "San Martín de Oscos",
     "slug": "san-martin-de-oscos-5022",
@@ -35565,7 +35593,7 @@
     "provinceSlug": "araba-alava-01",
     "stationCount": 4,
     "lat": 42.865493,
-    "lon": -2.320319,
+    "lon": -2.320333,
     "postalCodes": [
       "01207"
     ]
@@ -40810,29 +40838,15 @@
     ]
   },
   {
-    "id": "1731",
-    "name": "Torrejón el Rubio",
-    "slug": "torrejon-el-rubio-1731",
-    "provinceId": "10",
-    "provinceName": "Cáceres",
-    "provinceSlug": "caceres-10",
-    "stationCount": 1,
-    "lat": 39.7715,
-    "lon": -6.012,
-    "postalCodes": [
-      "10694"
-    ]
-  },
-  {
     "id": "1732",
     "name": "Torrejoncillo",
     "slug": "torrejoncillo-1732",
     "provinceId": "10",
     "provinceName": "Cáceres",
     "provinceSlug": "caceres-10",
-    "stationCount": 2,
-    "lat": 39.903834,
-    "lon": -6.475958,
+    "stationCount": 1,
+    "lat": 39.905139,
+    "lon": -6.478861,
     "postalCodes": [
       "10830"
     ]
@@ -41432,9 +41446,9 @@
     "provinceId": "36",
     "provinceName": "Pontevedra",
     "provinceSlug": "pontevedra-36",
-    "stationCount": 7,
-    "lat": 42.049185,
-    "lon": -8.649427,
+    "stationCount": 8,
+    "lat": 42.047721,
+    "lon": -8.650679,
     "postalCodes": [
       "36700",
       "36711",
@@ -45763,20 +45777,6 @@
     "lon": -3.739833,
     "postalCodes": [
       "23630"
-    ]
-  },
-  {
-    "id": "4863",
-    "name": "Villatuerta",
-    "slug": "villatuerta-4863",
-    "provinceId": "31",
-    "provinceName": "Navarra",
-    "provinceSlug": "navarra-31",
-    "stationCount": 1,
-    "lat": 42.653583,
-    "lon": -2.004667,
-    "postalCodes": [
-      "31292"
     ]
   },
   {

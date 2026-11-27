@@ -1,14 +1,14 @@
 {
   "dataVersion": 2,
-  "generatedAt": "2026-11-27T10:23:26.417Z",
-  "sourceUpdatedAt": "2026-11-27T11:23:26",
+  "generatedAt": "2026-11-27T20:31:38.993Z",
+  "sourceUpdatedAt": "2026-11-27T21:31:39",
   "totals": {
-    "stations": 11543,
+    "stations": 11540,
     "provinces": 52,
     "municipalities": 3260,
-    "discarded": 3,
+    "discarded": 2,
     "duplicates": 0,
-    "withoutCoordinates": 3,
+    "withoutCoordinates": 2,
     "chargingStations": 12150,
     "chargingPoints": 36052,
     "chargingDuplicates": 0,
@@ -16,28 +16,28 @@
   },
   "prices": {
     "g95": {
-      "count": 10973,
+      "count": 10971,
       "min": 1.089,
       "max": 2.099,
-      "avg": 1.504
+      "avg": 1.499
     },
     "g98": {
-      "count": 5517,
+      "count": 5516,
       "min": 1.189,
       "max": 2.5,
-      "avg": 1.702
+      "avg": 1.7
     },
     "goa": {
-      "count": 11324,
+      "count": 11320,
       "min": 1.299,
       "max": 2.119,
-      "avg": 1.736
+      "avg": 1.731
     },
     "gop": {
-      "count": 5916,
-      "min": 1.469,
+      "count": 5914,
+      "min": 1.459,
       "max": 2.179,
-      "avg": 1.833
+      "avg": 1.83
     },
     "glp": {
       "count": 1007,
@@ -49,8 +49,8 @@
   "quality": {
     "recordsWithoutPrices": 156,
     "invalidPrices": 0,
-    "discarded": 3,
+    "discarded": 2,
     "duplicates": 0,
-    "withoutCoordinates": 3
+    "withoutCoordinates": 2
   }
 }
