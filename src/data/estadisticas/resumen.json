@@ -1,11 +1,11 @@
 {
   "dataVersion": 2,
-  "generatedAt": "2026-11-27T20:31:38.993Z",
-  "sourceUpdatedAt": "2026-11-27T21:31:39",
+  "generatedAt": "2026-11-28T12:37:49.005Z",
+  "sourceUpdatedAt": "2026-11-28T13:37:49",
   "totals": {
-    "stations": 11540,
+    "stations": 11541,
     "provinces": 52,
-    "municipalities": 3260,
+    "municipalities": 3261,
     "discarded": 2,
     "duplicates": 0,
     "withoutCoordinates": 2,
@@ -16,28 +16,28 @@
   },
   "prices": {
     "g95": {
-      "count": 10971,
+      "count": 10973,
       "min": 1.089,
       "max": 2.099,
-      "avg": 1.499
+      "avg": 1.496
     },
     "g98": {
-      "count": 5516,
+      "count": 5517,
       "min": 1.189,
       "max": 2.5,
-      "avg": 1.7
+      "avg": 1.693
     },
     "goa": {
-      "count": 11320,
+      "count": 11321,
       "min": 1.299,
       "max": 2.119,
-      "avg": 1.731
+      "avg": 1.727
     },
     "gop": {
-      "count": 5914,
+      "count": 5913,
       "min": 1.459,
       "max": 2.179,
-      "avg": 1.83
+      "avg": 1.825
     },
     "glp": {
       "count": 1007,

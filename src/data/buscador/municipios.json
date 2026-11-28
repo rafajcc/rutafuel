@@ -6902,6 +6902,20 @@
     ]
   },
   {
+    "id": "4968",
+    "name": "Belmonte de Miranda",
+    "slug": "belmonte-de-miranda-4968",
+    "provinceId": "33",
+    "provinceName": "Asturias",
+    "provinceSlug": "asturias-33",
+    "stationCount": 1,
+    "lat": 43.286861,
+    "lon": -6.218333,
+    "postalCodes": [
+      "33830"
+    ]
+  },
+  {
     "id": "1211",
     "name": "Belorado",
     "slug": "belorado-1211",
@@ -12380,20 +12394,6 @@
     "lon": -5.172111,
     "postalCodes": [
       "47512"
-    ]
-  },
-  {
-    "id": "4892",
-    "name": "Castrelo de Miño",
-    "slug": "castrelo-de-mino-4892",
-    "provinceId": "32",
-    "provinceName": "Ourense",
-    "provinceSlug": "ourense-32",
-    "stationCount": 1,
-    "lat": 42.306556,
-    "lon": -8.070833,
-    "postalCodes": [
-      "32430"
     ]
   },
   {
@@ -32077,9 +32077,9 @@
     "provinceId": "18",
     "provinceName": "Granada",
     "provinceSlug": "granada-18",
-    "stationCount": 1,
-    "lat": 37.983278,
-    "lon": -2.333306,
+    "stationCount": 2,
+    "lat": 37.97025,
+    "lon": -2.383875,
     "postalCodes": [
       "18820"
     ]
@@ -38958,9 +38958,9 @@
     "provinceId": "46",
     "provinceName": "Valencia / València",
     "provinceSlug": "valencia-valencia-46",
-    "stationCount": 2,
-    "lat": 39.27732,
-    "lon": -0.379055,
+    "stationCount": 1,
+    "lat": 39.273778,
+    "lon": -0.374694,
     "postalCodes": [
       "46430"
     ]
@@ -45353,6 +45353,20 @@
     "lon": -3.999139,
     "postalCodes": [
       "09226"
+    ]
+  },
+  {
+    "id": "2429",
+    "name": "Villar de Domingo García",
+    "slug": "villar-de-domingo-garcia-2429",
+    "provinceId": "16",
+    "provinceName": "Cuenca",
+    "provinceSlug": "cuenca-16",
+    "stationCount": 1,
+    "lat": 40.234444,
+    "lon": -2.290667,
+    "postalCodes": [
+      "16840"
     ]
   },
   {

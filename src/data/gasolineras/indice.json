@@ -34,7 +34,7 @@
       "id": "33",
       "name": "Asturias",
       "slug": "asturias-33",
-      "stationCount": 241
+      "stationCount": 242
     },
     {
       "id": "05",
@@ -112,7 +112,7 @@
       "id": "16",
       "name": "Cuenca",
       "slug": "cuenca-16",
-      "stationCount": 121
+      "stationCount": 122
     },
     {
       "id": "20",
@@ -130,7 +130,7 @@
       "id": "18",
       "name": "Granada",
       "slug": "granada-18",
-      "stationCount": 288
+      "stationCount": 289
     },
     {
       "id": "19",
@@ -226,7 +226,7 @@
       "id": "32",
       "name": "Ourense",
       "slug": "ourense-32",
-      "stationCount": 90
+      "stationCount": 89
     },
     {
       "id": "34",
@@ -292,7 +292,7 @@
       "id": "46",
       "name": "Valencia / València",
       "slug": "valencia-valencia-46",
-      "stationCount": 652
+      "stationCount": 651
     },
     {
       "id": "47",
@@ -3675,6 +3675,13 @@
       "stationCount": 1
     },
     {
+      "id": "4968",
+      "name": "Belmonte de Miranda",
+      "slug": "belmonte-de-miranda-4968",
+      "provinceId": "33",
+      "stationCount": 1
+    },
+    {
       "id": "1211",
       "name": "Belorado",
       "slug": "belorado-1211",
@@ -6367,13 +6374,6 @@
       "name": "Castrejón de Trabancos",
       "slug": "castrejon-de-trabancos-7268",
       "provinceId": "47",
-      "stationCount": 1
-    },
-    {
-      "id": "4892",
-      "name": "Castrelo de Miño",
-      "slug": "castrelo-de-mino-4892",
-      "provinceId": "32",
       "stationCount": 1
     },
     {
@@ -15922,7 +15922,7 @@
       "name": "Puebla de Don Fadrique",
       "slug": "puebla-de-don-fadrique-2808",
       "provinceId": "18",
-      "stationCount": 1
+      "stationCount": 2
     },
     {
       "id": "2010",
@@ -19275,7 +19275,7 @@
       "name": "Sollana",
       "slug": "sollana-7197",
       "provinceId": "46",
-      "stationCount": 2
+      "stationCount": 1
     },
     {
       "id": "857",
@@ -22383,6 +22383,13 @@
       "name": "Villaquirán de los Infantes",
       "slug": "villaquiran-de-los-infantes-1524",
       "provinceId": "09",
+      "stationCount": 1
+    },
+    {
+      "id": "2429",
+      "name": "Villar de Domingo García",
+      "slug": "villar-de-domingo-garcia-2429",
+      "provinceId": "16",
       "stationCount": 1
     },
     {
